@@ -75,3 +75,24 @@ node tests/smoke.test.cjs
 - Import Excel -> เลือกหลายไฟล์โดยปุ่ม และลากหลายไฟล์ปล่อยบนส่วนใดก็ได้ของหน้า Import, ดู Batch Overview, รายชื่อสีต่างกัน และตรวจ duplicate
 - รัน `setupTutorOS()` ในสำเนา Google Sheets ก่อนอัปเกรดของจริง; ตรวจว่าประวัติเดิมไม่หาย
 - ทดสอบบน GitHub Pages จริงกับ Google OAuth/GSheets API เพราะการทดสอบแบบ offline ไม่สามารถยืนยันบัญชี Google ได้
+
+## v1.6 — Class Schedule view toggle
+
+- `node tests/schedule-view.test.cjs` — validates week boundaries, weekly repeats, year/month transitions, and consistent data for weekly and table layouts.
+- Browser check completed: toggling views, next/previous/current week, remembered view, and horizontal scroll on mobile. Screenshots use test-only demonstration records; real data was not connected.
+
+## v1.6 Testing — Bulk Review and Confirmation
+
+Automated scripts executed:
+
+```bash
+node --check assets/app.js
+node tests/connection-and-batch.test.cjs
+node tests/schedule-view.test.cjs
+node tests/smoke.test.cjs
+node tests/v16-bulk-summary.test.cjs
+```
+
+Browser integration script used during build: `test_v16_browser.py` (Playwright / Chromium) — validates that manual saving opens the confirmation summary before writing any record, that confirmation must be checked, that bulk approval opens the same confirmation and cannot deduct before it, that a Meet identity mapping propagates to an identical match in other uploaded reports, and that a two-file batch creates two Pending sessions after one confirmation.
+
+Important live acceptance tests still required: Google OAuth in your real Cloud Project; real Google Sheet load/write; permission failures; transaction collisions from two browsers; large imported files; backup/recovery. The offline tests do not cover these cloud integration conditions.

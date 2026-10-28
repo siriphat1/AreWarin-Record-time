@@ -1,6 +1,6 @@
 # AreWarin Tutor OS — GitHub Pages + Private Google Sheets
 
-**Version:** 1.4 MVP · **UI:** Thai / English · **Timezone:** Asia/Bangkok · **Style:** Academic Minimal / Forest Green
+**Version:** 1.5 MVP · **UI:** Thai / English · **Timezone:** Asia/Bangkok · **Style:** Academic Minimal / Forest Green
 
 เว็บแอปจัดการนักเรียน คอร์ส ชั่วโมงคงเหลือ การต่อคอร์ส การลงเวลาเรียนรายบุคคล/กลุ่ม และอ่าน Google Meet attendance Excel (.xlsx/.xls/.csv) ตามไฟล์ตัวอย่างที่ให้มา
 
@@ -263,3 +263,57 @@ window.TUTOR_CONFIG = {
 - ช่วงเวลาในรายงานและชื่อ Meet ยังควรตรวจโดยผู้ดูแลเมื่อมีข้อมูลแปลก/ไม่ครบ
 - มี unit/smoke tests สำหรับส่วนตรรกะสำคัญใน `tests/smoke.test.cjs` แต่ไม่ได้ยืนยันการล็อกอิน Google OAuth จริงจากบัญชีของคุณหรือทำ browser end-to-end test ครบทุกหน้าจอ
 - หาก OAuth 403 access_denied ให้ตรวจ **Google Cloud → Google Auth Platform → Audience → Test users** ว่ามีบัญชีที่ใช้ล็อกอิน และตรวจ **Clients → Authorized JavaScript origins** ให้ตรงกับโดเมน `https://siriphat1.github.io`
+
+
+## Class Schedule — Weekly & Table Views (v1.5)
+
+- เปิดเมนู **Class Schedule** แล้วเลือก **▦ รายสัปดาห์** เพื่อดูคาบเรียนแยกวันจันทร์–อาทิตย์ (สีเขียว = เดี่ยว, ฟ้า = กลุ่ม) หรือ **☷ ตารางรายการ** สำหรับข้อมูลแบบแถวที่เรียงตามวันและเวลา
+- ใช้ปุ่ม **‹ / ›** เปลี่ยนสัปดาห์ และ **สัปดาห์นี้** กลับมาปัจจุบัน ทั้งสองมุมมองแสดงคาบในช่วงสัปดาห์เดียวกัน
+- มุมมองที่เลือกจะถูกจดจำในเบราว์เซอร์นี้ โดยไม่ต้องเพิ่มชีตหรือคอลัมน์ใหม่ใน Google Sheets
+- รองรับคาบที่ตั้งให้เกิดซ้ำทุกสัปดาห์ และยังใช้ปุ่มเพิ่ม/แก้ไข/ยกเลิกคาบเดิมได้ (การยกเลิกคาบแบบซ้ำจะยกเลิกทั้งชุด)
+- บนมือถือมุมมองรายสัปดาห์เลื่อนซ้าย–ขวาได้ ส่วนมุมมองตารางสามารถเลื่อนแนวนอนได้เช่นกัน
+- ตารางเรียนยังเป็นเพียงแผนการสอน ไม่หักชั่วโมงจนกว่าจะบันทึกและอนุมัติใน Record Hours หรือ Import Excel
+
+### อัปเกรดจาก v1.4
+
+อัปโหลด `index.html`, `assets/app.js` และ `assets/style.css` เวอร์ชันใหม่ขึ้น GitHub Pages โดยเก็บ `config.js` เดิมไว้ได้ **ไม่ต้องรัน Apps Script หรือปรับ Google Sheets เพิ่ม** เพราะเวอร์ชันนี้ไม่เปลี่ยนโครงสร้างฐานข้อมูล
+
+---
+
+## v1.6 — Bulk Attendance Review & Mandatory Save Summary (28 Oct 2026)
+
+### Changes
+
+- **Always show a Review Summary** before writing a manual attendance record or importing an Excel report, and before approving/deducting hours (one session or multiple sessions).
+- The summary includes student, original source, class/course, attendance duration, deduction duration, and the **projected course balance**. Saving Pending does **not** deduct hours yet. The projected balance shown is what will apply **if** the Pending entry is later approved.
+- **Confirmation checkbox is required**: Confirm is disabled until the user affirms that the summary has been reviewed. Back/cancel makes no changes.
+- **Review & History** supports selecting all Pending sessions, selecting individual sessions, clearing the selection, and showing one combined summary for bulk approval.
+- **Google Meet Import** supports choosing all, only matched, or none of the participants; applying class, time basis, custom minutes and “remember this Meet identity” to the selected participants, scoped to the current file or all uncommitted files.
+- When the operator explicitly maps a Meet name to a student, identically named records with identical e-mail in the current file batch receive the same mapping automatically unless a conflicting mapping already exists. This is an operator-approved batch mapping, not an automatic match of unrelated users.
+- **Save multiple files as one batch**: select files with the checkboxes in Batch Review → click “สรุปก่อนบันทึกชุดไฟล์” → review every row → tick confirmation → save all selected files together as Pending.
+- Batch prevalidation checks file fingerprints, participants, active courses, group membership, overlapping attendance in existing entries **and across selected files**, and Meet alias conflicts. A failed check stops the entire batch before writing.
+- All original Student Cards, Course Renewal, Class Groups and Schedule Week/Table views are retained.
+
+### Example workflow
+
+1. Open **Import Excel**, then drag and drop one or more `.xlsx/.xls/.csv` attendance reports.
+2. Review unmatched names (red), different names across files (yellow), and matching names (green). Map unfamiliar Meet identities to the correct student once; the match is applied to corresponding records in the current batch.
+3. Use **Bulk Actions** to choose current/all files and select all or only known students. Apply the correct class/group, time reference and optional minutes to selected entries.
+4. In **Batch Review**, tick the files to save, and click **สรุปก่อนบันทึกชุดไฟล์**. The mandatory **Review Summary** must appear. Check the names, packages, minutes and projected balances. Tick the confirmation checkbox, then save.
+5. Go to **Review & History**. Select one or more Pending sessions, click **สรุปก่อนอนุมัติ**, review the projected balances and confirm again. This is when the Hour Ledger is updated and time is actually deducted.
+
+### Deployment upgrade from v1.5
+
+1. **Backup** the existing Google Sheet.
+2. On GitHub Pages replace `index.html`, `assets/app.js`, and `assets/style.css` from this v1.6 package. Retain the existing `config.js` (or re-enter your Client ID / Spreadsheet ID in Connection Settings).
+3. No new Google Sheets columns/tabs are required for v1.6; do **not** delete or recreate the existing data sheets.
+4. Clear the browser cache / hard-reload the page once to load the new JavaScript and CSS.
+5. Test on demo data before approving records from live Google Sheets.
+
+### Known limitations and safety
+
+- GitHub Pages + browser Google Sheets API is still an **owner-operated solution**. Google OAuth permissions, expiry and account access remain under Google's controls; automatic sign-in may require fresh user consent.
+- Approvals use one Google Sheets batch-update request, but the browser-side balance check is not a substitute for a server-side transaction lock if multiple administrators approve different records simultaneously. Deploy multi-user editing only after implementing server-side concurrency control.
+- Each Excel attendance report is treated as an independent import source; if the same student has overlapping attendance in two reports, the batch is blocked for review instead of silently double billing.
+- Summaries are mandatory for **attendance saving and approval** in v1.6. Changes to student/course master data are still performed through their existing edit forms.
+- No Google account credentials, client secrets, or permanent OAuth access tokens should be committed to GitHub.
