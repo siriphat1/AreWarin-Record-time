@@ -161,3 +161,63 @@
 .batch-select-check{flex:none;width:38px;height:40px;display:grid;place-items:center;border:1px solid #d7e5d9;border-radius:9px;background:#fff}
 .batch-select-check input{width:18px;height:18px;accent-color:#1d6845}
 @media(max-width:680px){.batch-toolbar .button-row{width:100%}.batch-toolbar .button-row button{flex:1}.batch-select-check{width:35px}}
+
+/* v1.6.1 — Keep Meet identity memory checkbox at the same readable scale as Bulk Actions form labels. */
+.bulk-panel > label.check{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  max-width:100%;
+  margin-top:12px;
+  color:#4a6858;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.55;
+  cursor:pointer;
+}
+.bulk-panel > label.check input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  min-width:16px;
+  margin:0;
+  flex:0 0 16px;
+  accent-color:#24684e;
+}
+@media(max-width:600px){
+  .bulk-panel > label.check{font-size:12px;gap:9px;align-items:flex-start}
+  .bulk-panel > label.check input[type="checkbox"]{margin-top:2px}
+}
+
+/* v1.7 — Clean Import workflow and date-first history */
+.import-section-title{display:flex;align-items:center;gap:12px;min-width:0;margin-bottom:13px}
+.import-section-title h2{font-size:16px;margin:0}.import-section-title p{margin:4px 0 0}
+.import-step{background:#e6f1e8;color:#255e41;border-radius:10px;width:36px;height:36px;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none}
+.import-upload-panel .dropzone{min-height:155px;gap:10px;padding:20px}
+.import-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:17px 0}
+.import-metrics>div{border-radius:11px;border:1px solid #e0eae2;background:#f6faf7;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.import-metrics small{font-size:11px;color:#718a79}.import-metrics strong{font-size:18px;line-height:1.3;color:#214e36;overflow-wrap:anywhere}
+.import-table-toolbar,.import-summary-actions,.config-line,.config-bottom,.import-final-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.import-table-toolbar{margin:9px 0 12px}.import-summary-actions{border-top:1px solid #e4ede5;margin-top:15px;padding-top:16px}
+.import-check{font-size:12px!important;font-weight:600!important;line-height:1.5!important;display:flex!important;align-items:center!important;gap:9px!important;margin:0!important}
+.import-check input{width:17px!important;height:17px!important;flex:0 0 17px!important;margin:0!important;accent-color:#216d4e}
+.import-record-table table{min-width:930px}.import-record-table td,.import-record-table th{vertical-align:middle;font-size:11px}.import-record-table tr.is-current{background:#f0f8f2}
+.import-record-table td strong{font-size:12px}.import-record-table small{display:block;color:#8a9c8e;font-size:10px;margin-top:4px}
+.import-record-table .import-filename{max-width:210px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3c614b}.import-flag{color:#ac661c!important;font-weight:700}
+.nowrap{white-space:nowrap}.config-source{border:1px solid #e1ebe3;background:#f9fbf9;border-radius:10px;padding:14px;margin:12px 0 17px}
+.config-source-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:13px}
+.config-source-heading strong{font-size:12px;color:#2b513a}.config-source-heading span{font-size:11px;color:#819789;overflow-wrap:anywhere}
+.config-line{align-items:end}.config-line>.field{min-width:220px;flex:0 1 280px}.config-line .button-row{flex-wrap:wrap}.config-checks{display:flex;gap:15px;flex-wrap:wrap;margin:18px 0}
+.config-bottom,.import-final-actions{border-top:1px solid #dfebe0;padding-top:16px;margin-top:16px}.config-source-picker{max-width:500px;margin-top:12px}
+.import-people-panel .panel-head .import-section-title{margin-bottom:0}
+.import-participant-table table{min-width:1030px}.import-participant-table th{white-space:nowrap}.import-participant-table td{font-size:11px;vertical-align:top}
+.import-participant-table td strong{display:block;font-size:12px;margin-bottom:4px}.import-participant-table td small{display:block;color:#809587;font-size:10px;margin-top:4px}
+.import-participant-table td select{min-width:145px;max-width:230px;font-size:11px!important;padding:8px!important}.import-participant-table td input[type=number]{width:78px;font-size:12px;padding:7px}
+.import-participant-table td input[type=checkbox]{width:17px;height:17px;accent-color:#24674b}
+.person-options{max-width:200px;margin-top:9px}.person-options summary{cursor:pointer;color:#347254;font-size:10px;font-weight:700}.person-options .check{font-size:11px!important;margin:8px 0;line-height:1.5}.person-options .field{margin:8px 0}
+.history-filter-grid{margin-bottom:12px}.history-switch{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.history-results table,.history-day table{min-width:890px}.history-results td small,.history-day td small{display:block;color:#789181;margin-top:3px;font-size:10px}
+.history-day{border:1px solid #dce8df;border-radius:11px;margin-top:12px;background:#fff;overflow:hidden}.history-day>summary{padding:15px 16px;background:#f4f9f5;cursor:pointer;display:flex;justify-content:space-between;gap:12px;color:#29553e;font-size:12px}.history-day>summary span{color:#6b8773}
+@media(max-width:850px){.import-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.import-section-title h2{font-size:15px}}
+@media(max-width:550px){.import-metrics strong{font-size:15px}.config-line>.field{max-width:none;width:100%;flex:auto}.config-line .button-row,.config-bottom .button-row,.import-final-actions .button-row{width:100%}.import-final-actions .button-row button{flex:1;min-width:140px}.import-summary-actions .btn{width:100%}.history-switch .button-row{width:100%}.import-upload-panel .dropzone{padding:14px}.import-section-title{align-items:flex-start}}
+.bulk-panel #bulk-minutes-field[hidden]{display:none!important}
