@@ -221,3 +221,34 @@
 @media(max-width:850px){.import-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.import-section-title h2{font-size:15px}}
 @media(max-width:550px){.import-metrics strong{font-size:15px}.config-line>.field{max-width:none;width:100%;flex:auto}.config-line .button-row,.config-bottom .button-row,.import-final-actions .button-row{width:100%}.import-final-actions .button-row button{flex:1;min-width:140px}.import-summary-actions .btn{width:100%}.history-switch .button-row{width:100%}.import-upload-panel .dropzone{padding:14px}.import-section-title{align-items:flex-start}}
 .bulk-panel #bulk-minutes-field[hidden]{display:none!important}
+
+/* v1.7.1 — Explicit dates in every Final Confirmation row */
+.summary-date-range{margin:12px 0 15px;border:1px solid #cfe3d5;background:#f0f8f2;border-radius:12px;padding:14px 17px;display:flex;flex-direction:column;gap:5px}
+.summary-date-range span{font-size:10px;letter-spacing:.3px;color:#577c64;font-weight:700}
+.summary-date-range strong{font-size:18px;line-height:1.45;color:#174c37;font-weight:800}
+.summary-date-range small{font-size:10px;line-height:1.5;color:#658472}
+.summary-highlights-four{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.confirmation-day-breakdown{margin:14px 0;border:1px solid #dce9df;border-radius:10px;overflow:hidden}
+.confirmation-day-breakdown summary{padding:12px 15px;background:#f5f9f6;color:#28583f;font-size:12px;font-weight:750;cursor:pointer}
+.confirmation-day-list{padding:4px 14px 10px;max-height:250px;overflow-y:auto}
+.confirmation-day-list>div{display:flex;justify-content:space-between;gap:15px;padding:8px 0;border-bottom:1px solid #edf1ed;font-size:11px}
+.confirmation-day-list>div:last-child{border-bottom:0}.confirmation-day-list span{color:#779181}
+.confirmation-table-wrap{max-height:min(55vh,650px);overflow:auto;border:1px solid #dce7df}
+.confirmation-table{min-width:1050px}.confirmation-table th{position:sticky;top:0;z-index:2;background:#f5f8f5;box-shadow:0 1px 0 #dfe9e0}
+.confirmation-table .confirmation-date-cell{white-space:nowrap;min-width:145px;background:#f6faf6}
+.confirmation-date-cell strong{display:block;color:#184f39;font-size:12px}
+.confirmation-date-cell small{display:block;font:10px 'DM Sans',sans-serif;color:#769082;letter-spacing:.2px;margin-top:4px}
+.confirmation-file{max-width:240px;overflow-wrap:anywhere;line-height:1.5;margin-top:5px}
+@media(max-width:750px){.summary-highlights-four{grid-template-columns:repeat(2,minmax(0,1fr))!important}.summary-date-range strong{font-size:15px}.confirmation-day-list>div{flex-direction:column;gap:3px}}
+
+/* Keep the date visible while reviewing very wide participant tables. */
+.confirmation-table td:first-child,.confirmation-table th:first-child{position:sticky;left:0;z-index:1;box-shadow:1px 0 0 #dfebe0}
+.confirmation-table th:first-child{z-index:3;background:#eef6ef}
+
+/* v1.8 – cleaner review, dated schedules, automatic duration */
+.duration-banner{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 20px;background:#edf7ef;border:1px solid #c9e2cf;border-radius:13px;color:#26513b;margin:13px 0 17px;font-size:13px}
+.duration-banner strong{font-size:22px;color:#164d35}.duration-banner small{width:100%;font-size:11px;color:#688571}
+.student-schedule-optional,.import-date-editor{border:1px solid #dbe8de;border-radius:12px;padding:14px;background:#f8fbf8;margin:14px 0}.student-schedule-optional summary{cursor:pointer;font-weight:700;color:#245c40;font-size:13px}.student-schedule-optional .grid-3{margin-top:12px}.import-date-editor>strong,.import-date-editor>span{display:block}.import-date-editor>span{font-size:11px;color:#72877b;margin:5px 0 12px;overflow-wrap:anywhere}
+.student-next-date{background:#f1f7f2;color:#37654b;padding:9px 11px;border-radius:8px;font-size:11px;margin:6px 0}
+#aw-loading{position:fixed;inset:0;background:rgba(12,37,27,.65);color:#fff;z-index:99999;display:flex;justify-content:center;align-items:center;font-size:20px;font-weight:700;text-align:center;padding:20px}
+#aw-loading[hidden]{display:none!important}

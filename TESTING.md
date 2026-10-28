@@ -1,129 +1,39 @@
-# v1.7.1 — Date Confirmation Regression
+# v1.8 — Verification & Test Checklist
 
-```bash
-node tests/v171-confirmation-dates.test.cjs
-node tests/v17-import-dates.test.cjs
-node tests/smoke.test.cjs
-```
+## Tests performed locally
 
-- Final Confirmation แสดง DATE ในทุกแถว พร้อมปี พ.ศ. และ ISO date
-- 17 ไฟล์จากหลายวัน ต้องเห็นวันที่แตกต่างตามแต่ละไฟล์ ไม่รวมเป็นวันเดียว
-- ห้ามบันทึกแถวที่วันที่ว่างหรือไม่ถูกต้อง
-- Sessions.date และ Imports.date ถูกบันทึกพร้อมกันในแต่ละไฟล์; Attendance อ้าง session_id
-- ยืนยันอีกครั้งตอน Approve; ตรวจวันที่ทุกคาบก่อนตัดยอด
-
-# v1.7 Acceptance Checklist
-
-- [ ] วาง Excel หลายไฟล์พร้อมกันและเห็นตารางวันที่/เวลา/ชั่วโมง/ไฟล์บนสุด
-- [ ] วันที่จากภายใน Excel มีลำดับความสำคัญสูงกว่าชื่อไฟล์
-- [ ] วันที่ไม่พบหรือขัดแย้งต้องได้รับการยืนยันก่อนบันทึก
-- [ ] เลือกไฟล์ และตรวจชื่อผู้เข้าร่วมที่ไม่รู้จัก
-- [ ] ตั้งเวลาอ้างอิง/ประเภทคลาสใน Class Configuration เพียงส่วนเดียว
-- [ ] เลือก bulk ทั้งชุดหรือไฟล์นี้และปรับเฉพาะคนได้
-- [ ] ไม่อนุญาตให้อ้างอิงผู้เข้าร่วมของหลายไฟล์พร้อมกันโดยไม่ระบุแยก
-- [ ] Final Review Summary ต้องปรากฏก่อนบันทึก Pending ทุกครั้ง
-- [ ] Approve ต้องเปิดสรุปอีกครั้งก่อนหักชั่วโมงจริง
-- [ ] Learning History กรองตามวัน ติวเตอร์ นักเรียน กลุ่ม คอร์ส สถานะได้
-- [ ] คลิก Session Details ได้โดยไม่แก้ไขรายการเก่า
-- [ ] ทดสอบ Google OAuth + Sheets จริงใน Project ของผู้ใช้ ก่อนใช้งานข้อมูลจริง
-
----
-
-# Acceptance Checklist — AreWarin Tutor OS V1
-
-ทดสอบใน Demo ก่อน แล้วทดสอบซ้ำใน Google Sheets Live โดยไม่ใช้ข้อมูลส่วนบุคคลจริง
-
-- [ ] เพิ่มนักเรียนใหม่ และแก้ไขชื่อ/alias
-- [ ] สร้างคอร์ส 10 ชั่วโมง → Hour Ledger เพิ่ม 600 นาที
-- [ ] เติมชั่วโมงอีก 5 ชั่วโมง → ยอดรวมเพิ่ม 300 นาที
-- [ ] ต่อคอร์สรอบ 2 แบบ Transfer → ยอดเก่ากลายเป็น 0 และคอร์สเก่าถูกซ่อน
-- [ ] กด `ดูประวัติคอร์สเก่า` → พบคอร์สรอบเก่าและ ledger เดิม
-- [ ] ต่อคอร์สแบบ Keep → แพ็กเกจเก่าเป็น Held, ไม่แสดงเป็นคอร์ส Active แต่เลือกใช้งานได้
-- [ ] บันทึก Manual ช่วง 18:00–20:00 → Pending 120 นาที
-- [ ] บันทึก Manual กลุ่มเลือกสองคน โดย Override นาทีคนละค่า → Pending ต่างกัน
-- [ ] Approve → หักชั่วโมงจริงจากคอร์สที่กำหนดแยกรายคน
-- [ ] แก้ Approved attendance จาก 120 เป็น 90 นาที → คืน 30 นาทีด้วย ledger adjustment
-- [ ] ยกเลิก Approved session → คืนชั่วโมงของคาบนั้นและเก็บประวัติ cancel
-- [ ] Import XLSX ตัวอย่าง → อ่านวัน/เวลา/รายชื่อ/ชั่วโมงได้ถูกต้อง
-- [ ] กำหนด Tutor time / Student time / Overlap / Custom และตรวจ Preview
-- [ ] กด Import ซ้ำไฟล์เดิม → แจ้งเตือน duplicate
-- [ ] เพิ่มตารางเรียนประจำทุกสัปดาห์ → แสดงรายการล่วงหน้า 21 วัน
-- [ ] Export CSV เปิดด้วย Excel และอ่านภาษาไทยได้
-- [ ] Print Report / Save PDF จากหน้าต่างพิมพ์ได้
-- [ ] ตรวจ responsive UI ในจอ 375px / 768px / desktop
-- [ ] Google Sheets ไม่ได้ตั้งค่า Anyone with the link หรือ Publish to web
-- [ ] สำรองฐานข้อมูล Google Drive และทดสอบกู้คืนด้วยสำเนาชีตในพื้นที่ทดสอบ
-
-หมายเหตุ: มีการตรวจ Node.js syntax และ unit test ตรรกะ Ledger/Approve/Cancel/Join-Time แล้ว แต่ต้องทดสอบ UI จริงในเบราว์เซอร์และ OAuth ภายใต้บัญชีผู้ใช้ก่อนนำขึ้นใช้งานจริง
-
-## V1.1 Regression Test — Safe Delete / Batch Excel
-
-1. เพิ่มนักเรียนแล้วกด `ลบนักเรียน` → ยืนยัน → ตรวจว่าหายจาก Students ปกติ, ยังปรากฏใน `♻ ถังขยะ` และ `Audit` เก็บ `student_trashed`
-2. กด `กู้คืนนักเรียน` → ชื่อกลับเข้ารายการ, คอร์สและ Ledger เดิมไม่หาย และ Audit เก็บ `student_restored`
-3. นักเรียนที่มี Attendance ใน Pending ต้องถูกบล็อกไม่ให้ลบ จนอนุมัติหรือยกเลิกคาบนั้น
-4. Import Excel → ตัวเลือกติวเตอร์ต้องแสดง `13 นาที`, `1 ชม. 30 นาที` แทน `0:13`, `1:30`
-5. เลือก XLSX 2 ไฟล์พร้อมกัน → Batch Overview แสดงไฟล์ทั้งคู่, รายชื่อสีเขียว/เหลือง/แดง, เปลี่ยนไฟล์แล้วค่าที่แก้ไขยังอยู่
-6. ชื่อ Google Meet ต่างกันในสองไฟล์ แต่จับคู่กับ Student ID เดียวกัน → เตือน `ชื่อ Meet ไม่ตรงกัน` สีเหลือง; หากไม่มีการจับคู่เป็นสีแดง
-7. ไฟล์นำเข้าซ้ำต้องเตือน และไม่ทำให้ session/ledger เพิ่มซ้ำ; หลัง Save ต้องเป็น Pending ไม่ตัดชั่วโมง
-8. ไฟล์ใดเสียให้ขึ้น `อ่านไม่สำเร็จ` โดยอีกไฟล์ยังใช้งานต่อได้
-
-
-## v1.3 — Acceptance / Regression
-
-- [ ] สำรอง Google Sheets และรัน `setupTutorOS` ใหม่ → ยังมีข้อมูล 9 แท็บเดิมและเพิ่ม 4 แท็บใหม่
-- [ ] ยืนยัน Meet alias ใหม่จาก Student Profile → ชื่อปรากฏใต้ Google Meet Identities
-- [ ] Import Excel ที่มีชื่อยืนยัน → ระบบจับคู่ Student ID อัตโนมัติ
-- [ ] มีชื่อ/อีเมลที่อ้างถึง 2 นักเรียน → แสดงสีแดง ไม่จับคู่โดยอัตโนมัติ
-- [ ] ระหว่าง Import เลือกชื่อที่ไม่รู้จัก → ติ๊ก “จดจำ” → Pending → Import ครั้งถัดไปจับคู่ได้
-- [ ] ยกเลิก alias → ไม่กระทบ Attendance และ Ledger เดิม
-- [ ] สร้างกลุ่มและเพิ่มนักเรียน A เข้า 2 กลุ่ม → เรียนเดี่ยวได้ด้วย ไม่เกิด Student ID ใหม่
-- [ ] เอานักเรียนออกจากกลุ่ม → ประวัติสมาชิกยังแสดงวันเข้า/ออก
-- [ ] ตั้งกติกากลุ่มและตรวจว่าคาบใหม่เสนอแหล่งเวลาและการปัดนาทีตามเงื่อนไข
-- [ ] อัปโหลด Excel 2 ไฟล์ ชื่อไม่เหมือนกัน → Import Conflict Center แสดงรายการต้องตรวจและเลือกไฟล์ที่มีปัญหาได้
-- [ ] เลือกประเภทคาบ “กลุ่ม” โดยไม่ระบุ Group ID → ไม่อนุญาตให้บันทึก
-- [ ] แบ่งไฟล์เดียวเป็น 1 คาบเดี่ยว + 1 คาบกลุ่ม → สร้าง 2 Pending Sessions แต่บันทึก Import fingerprint เพียงหนึ่งรายการ
-- [ ] Import ไฟล์เดิมซ้ำ → บล็อกรายการซ้ำ
-- [ ] Import นักเรียนที่มีคาบซ้อนทับกันในวันเดียวกัน → เตือนและบล็อกการนำเข้าซ้ำ
-- [ ] กำหนดวันหมดอายุคอร์ส → ไม่ให้บันทึกคาบเรียนที่เลยวันหมดอายุ
-- [ ] รายงานความสมบูรณ์แจ้งยอดติดลบหรือ duplicate alias ถ้าเกิดข้อมูลผิดปกติ
-- [ ] ปรับหรือต่อคอร์สเดิม → ประวัติคอร์สและ Ledger ยังอยู่
-
-### Automated smoke test
-
-```bash
-node tests/smoke.test.cjs
-```
-
-ผ่านการทดสอบตรรกะ 13 ประเด็นด้วยข้อมูลสมมติใน Node.js; ยังต้องทดสอบคลิกใช้งานจริงผ่าน GitHub Pages และ Google Sheets ของผู้ใช้
-
-## v1.4 manual UI checklist
-
-- เปิดเว็บครั้งแรกโดยไม่มี config -> แสดง Setup Google แทน Dashboard Demo; กด 'ทดลองข้อมูลจำลอง' จึงเข้าดู Demo
-- ตั้งค่า Google Client ID + Spreadsheet ID ใน Connection Settings แล้ว Refresh -> ตัวระบุยังจำได้ โดยไม่ต้องกรอกซ้ำ
-- ยืนยัน Google Sign In บนเว็บไซต์จริง แล้ว Refresh ภายใน token validity -> โหลดชีตจริงอัตโนมัติ
-- ทดสอบ token หมดอายุ -> แสดง Connect Google แทนข้อมูล Demo และเปิดบัญชีใหม่ด้วยการกดหนึ่งครั้ง
-- Students -> Card View / Table View, ค้นหา, กรองระดับชั้น, แก้ไขโรงเรียน/ระดับชั้น -> ตรวจ StudentEducationHistory
-- Import Excel -> เลือกหลายไฟล์โดยปุ่ม และลากหลายไฟล์ปล่อยบนส่วนใดก็ได้ของหน้า Import, ดู Batch Overview, รายชื่อสีต่างกัน และตรวจ duplicate
-- รัน `setupTutorOS()` ในสำเนา Google Sheets ก่อนอัปเกรดของจริง; ตรวจว่าประวัติเดิมไม่หาย
-- ทดสอบบน GitHub Pages จริงกับ Google OAuth/GSheets API เพราะการทดสอบแบบ offline ไม่สามารถยืนยันบัญชี Google ได้
-
-## v1.6 — Class Schedule view toggle
-
-- `node tests/schedule-view.test.cjs` — validates week boundaries, weekly repeats, year/month transitions, and consistent data for weekly and table layouts.
-- Browser check completed: toggling views, next/previous/current week, remembered view, and horizontal scroll on mobile. Screenshots use test-only demonstration records; real data was not connected.
-
-## v1.6 Testing — Bulk Review and Confirmation
-
-Automated scripts executed:
+Run:
 
 ```bash
 node --check assets/app.js
-node tests/connection-and-batch.test.cjs
-node tests/schedule-view.test.cjs
-node tests/smoke.test.cjs
-node tests/v16-bulk-summary.test.cjs
+for f in tests/*.test.cjs; do node "$f"; done
 ```
 
-Browser integration script used during build: `test_v16_browser.py` (Playwright / Chromium) — validates that manual saving opens the confirmation summary before writing any record, that confirmation must be checked, that bulk approval opens the same confirmation and cannot deduct before it, that a Meet identity mapping propagates to an identical match in other uploaded reports, and that a two-file batch creates two Pending sessions after one confirmation.
+Browser automated checks with Chromium/Playwright (`python tests/v18-browser.test.py`):
+- เพิ่มนักเรียนและลงวันเรียน (ไม่บังคับ) ใน Class Schedule
+- มอบหมายคอร์สจากต้นแบบ แล้วได้แพ็กเกจแยกตามนักเรียน
+- Manual 18:00–19:30 แสดง 1 ชม. 30 นาทีและหัก 90 นาทีทันที
+- เพิ่มรายการ Manual เดิมวันที่/เวลาซ้ำ ถูกปฏิเสธ
+- ยกเลิกรายการเดี่ยว คืนชั่วโมง 90 นาที
+- ยืนยัน Google Meet สองวันพร้อมกัน → Approved ทั้งสองวัน / Ledger สองแถว / ล้างหน้า Import
+- ยกเลิกเฉพาะคนในกลุ่ม คืนให้คนนั้น ไม่คืนให้คนอื่น
+- ยกเลิกคาบกลุ่มทั้งหมดต่อ ไม่คืนซ้ำให้คนที่เคยถูกยกเลิก
+- Learning Calendar แสดงคาบที่นำเข้าจาก Excel แม้ไม่มีตารางเรียนล่วงหน้า
+- Legacy Pending ไม่ถูกตัดอัตโนมัติ แต่ตัดได้ทีละครั้งหลังตรวจสอบ
+- ไม่มี uncaught browser JavaScript errors ในชุดทดสอบนี้
 
-Important live acceptance tests still required: Google OAuth in your real Cloud Project; real Google Sheet load/write; permission failures; transaction collisions from two browsers; large imported files; backup/recovery. The offline tests do not cover these cloud integration conditions.
+## Must verify on live Google Sheets before production
+
+1. Connect OAuth → load Sheets without sharing publicly.
+2. Create test student and course; check rows in `Students`, `Courses`, `Ledger`.
+3. Create optional schedule; check row in `Schedules`.
+4. Record test session; check `Sessions.status=approved`, `Attendance.status=approved`, one negative `Ledger.minutes` for each attendee; balance decreases immediately.
+5. Import the two example Excel files; verify different `Sessions.date`, `Imports.date`, names, duration, and total deductions.
+6. Reimport same file; verify duplicate guard.
+7. Cancel test attendance; verify positive refund ledger and correct remaining balance.
+8. Confirm legacy Pending only after reviewing any previous manual adjustments.
+9. On mobile, check Student Cards, Class Schedule, Review Summary, and Import Excel.
+
+**Data migration:** No new Google Sheets schema in v1.8; existing Pending rows remain unchanged until explicitly handled.
+
+**Concurrency:** Google's Sheets API in a static front end does not provide application-level multi-user transaction locking; do not assume concurrent user writes are fully protected.

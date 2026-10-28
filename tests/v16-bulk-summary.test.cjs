@@ -21,14 +21,12 @@ assert.equal(plan.aliases.length,0); // identity was already memorized on studen
 (async()=>{
  await run('saveImports([0,1])');
  assert.equal(run('all("Imports").length'),2);
- assert.equal(run('all("Sessions").filter(s=>s.status==="pending").length'),2);
- assert.equal(run('all("Ledger").filter(l=>l.type==="deduct").length'),2); // existing historic rows only, no pending deductions
- assert.equal(run('state.importDone.every(x=>x==="saved")'),true);
- const ids=run('all("Sessions").filter(s=>s.status==="pending").map(s=>s.id)');context.ids=ids;
- const check=run('buildApproval(ids)');assert.equal(check.aa.length,2);
- await run('approveSessions(ids)');
+ assert.equal(run('all("Sessions").filter(s=>s.status==="approved"&&s.mode==="excel").length'),2);
+ assert.equal(run('all("Ledger").filter(l=>l.type==="deduct").length'),4); // original 2 + 2 new deductions
+ assert.equal(run('state.importQueue.length'),0); // clear upload workspace after save
+ const ids=run('all("Sessions").filter(s=>s.status==="approved"&&s.mode==="excel").map(s=>s.id)');context.ids=ids;
  assert.equal(run('balance("demo-course-a")'),330);
  assert.throws(()=>run('buildApproval(ids)'),/รออนุมัติ/);
- assert.throws(()=>run('constructImportBatch([0])'),/เคยนำเข้า/);
- console.log('PASS v1.6 bulk file overlap rejection, multi-file atomic staging, pending/approve aggregated, no double-deduction');
+ context.replay=context.d0;run('state.importDrafts=[replay];state.importDone=[""]');assert.throws(()=>run('constructImportBatch([0])'),/เคยนำเข้า/);
+ console.log('PASS v1.8 bulk import overlap rejection, immediate deduction, no double-deduction');
 })().catch(e=>{console.error(e);process.exit(1)});
