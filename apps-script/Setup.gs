@@ -6,7 +6,7 @@
  * No API secrets or passwords in public JavaScript.
  */
 const TUTOR_SCHEMA = {
-  Students: ['id','name','email','aliases','status','created_at','notes'],
+  Students: ['id','name','email','aliases','status','created_at','notes','full_name','school','grade_level','academic_year','updated_at'],
   Courses: ['id','student_id','title','cycle_no','start_date','purchased_minutes','status','previous_course_id','created_at','closed_at'],
   Groups: ['id','name','member_ids','created_at'],
   Schedules: ['id','date','student_id','group_id','start_time','end_time','tutor','repeat_rule','status','notes','created_at'],
@@ -18,7 +18,8 @@ const TUTOR_SCHEMA = {
   MeetAliases: ['id','student_id','meet_name','email','normalized_name','normalized_email','status','verified_at','created_at'],
   GroupMemberships: ['id','group_id','student_id','joined_at','left_at','status','created_at'],
   ClassRules: ['id','scope_type','scope_id','basis','rounding_minutes','minimum_minutes','updated_at'],
-  CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at']
+  CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at'],
+  StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at']
 };
 function setupTutorOS() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -29,7 +30,15 @@ function setupTutorOS() {
     if (!sheet) sheet = ss.insertSheet(name);
     const existing = sheet.getLastRow() ? sheet.getRange(1,1,1,Math.max(sheet.getLastColumn(),headers.length)).getValues()[0] : [];
     if (existing.some(v=>v !== '')) {
-      if (headers.some((v,i)=>existing[i]!==v)) throw Error(`Sheet ${name} has different headers. Please check without overwriting data.`);
+      // Only add new columns at the end; never move or overwrite existing student data.
+      const nonempty=existing.filter(v=>v!==''&&v!==null);
+      if (nonempty.some((v,i)=>headers[i]!==v)) throw Error(`Sheet ${name} has different headers. Please check without overwriting data.`);
+      if (nonempty.length<headers.length) {
+        const extra=headers.slice(nonempty.length);
+        sheet.getRange(1,nonempty.length+1,1,extra.length).setValues([extra]);
+        sheet.getRange(1,nonempty.length+1,1,extra.length).setFontWeight('bold').setFontColor('#ffffff').setBackground('#174b3a');
+        sheet.setColumnWidths(nonempty.length+1,extra.length,150);
+      }
     } else {
       sheet.getRange(1,1,1,headers.length).setValues([headers]);
       sheet.setFrozenRows(1);

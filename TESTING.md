@@ -64,3 +64,14 @@ node tests/smoke.test.cjs
 ```
 
 ผ่านการทดสอบตรรกะ 13 ประเด็นด้วยข้อมูลสมมติใน Node.js; ยังต้องทดสอบคลิกใช้งานจริงผ่าน GitHub Pages และ Google Sheets ของผู้ใช้
+
+## v1.4 manual UI checklist
+
+- เปิดเว็บครั้งแรกโดยไม่มี config -> แสดง Setup Google แทน Dashboard Demo; กด 'ทดลองข้อมูลจำลอง' จึงเข้าดู Demo
+- ตั้งค่า Google Client ID + Spreadsheet ID ใน Connection Settings แล้ว Refresh -> ตัวระบุยังจำได้ โดยไม่ต้องกรอกซ้ำ
+- ยืนยัน Google Sign In บนเว็บไซต์จริง แล้ว Refresh ภายใน token validity -> โหลดชีตจริงอัตโนมัติ
+- ทดสอบ token หมดอายุ -> แสดง Connect Google แทนข้อมูล Demo และเปิดบัญชีใหม่ด้วยการกดหนึ่งครั้ง
+- Students -> Card View / Table View, ค้นหา, กรองระดับชั้น, แก้ไขโรงเรียน/ระดับชั้น -> ตรวจ StudentEducationHistory
+- Import Excel -> เลือกหลายไฟล์โดยปุ่ม และลากหลายไฟล์ปล่อยบนส่วนใดก็ได้ของหน้า Import, ดู Batch Overview, รายชื่อสีต่างกัน และตรวจ duplicate
+- รัน `setupTutorOS()` ในสำเนา Google Sheets ก่อนอัปเกรดของจริง; ตรวจว่าประวัติเดิมไม่หาย
+- ทดสอบบน GitHub Pages จริงกับ Google OAuth/GSheets API เพราะการทดสอบแบบ offline ไม่สามารถยืนยันบัญชี Google ได้

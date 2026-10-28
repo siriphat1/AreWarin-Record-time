@@ -1,6 +1,6 @@
 # AreWarin Tutor OS — GitHub Pages + Private Google Sheets
 
-**Version:** 1.3 MVP · **UI:** Thai / English · **Timezone:** Asia/Bangkok · **Style:** Academic Minimal / Forest Green
+**Version:** 1.4 MVP · **UI:** Thai / English · **Timezone:** Asia/Bangkok · **Style:** Academic Minimal / Forest Green
 
 เว็บแอปจัดการนักเรียน คอร์ส ชั่วโมงคงเหลือ การต่อคอร์ส การลงเวลาเรียนรายบุคคล/กลุ่ม และอ่าน Google Meet attendance Excel (.xlsx/.xls/.csv) ตามไฟล์ตัวอย่างที่ให้มา
 
@@ -19,7 +19,7 @@ arewarin-tutor-os/
 │   └── Setup.gs               # สร้างชีตฐานข้อมูล + Backup
 ├── samples/
 │   ├── sample-meet-report.csv # ข้อมูลสมมติสำหรับทดสอบ
-│   └── รายงานการเข้าร่วม demo-meet ... .xlsx
+│   └── sample-meet-report.xlsx
 ├── README.md
 └── TESTING.md
 ```
@@ -29,7 +29,7 @@ arewarin-tutor-os/
 ## วิธีเปิดทดลอง (Demo Mode)
 
 1. เปิด `index.html` ใน Chrome/Edge หรืออัปโหลดขึ้น GitHub Pages ได้ทันที
-2. หน้า Dashboard มีข้อมูลจำลองของนักเรียน A/B เพื่อทดลองฟีเจอร์
+2. เมื่อยังไม่ตั้งค่าระบบ หน้าแรกจะแสดงคำแนะนำตั้งค่า Google Sheets แทนข้อมูลจำลอง; หากต้องการทดลอง ให้กด **ทดลองข้อมูลจำลอง** แล้วจะมีข้อมูล A/B
 3. เพิ่มนักเรียน, สร้างคอร์ส, ต่อคอร์ส, ลงเวลา, Approve/Refund และดูรายงานได้
 4. ข้อมูลทดลองบันทึกเฉพาะใน `localStorage` ของเบราว์เซอร์ที่เปิดแอป **ไม่ใช่ Google Sheets**; เปลี่ยนเครื่อง/เบราว์เซอร์ไม่ได้รับข้อมูลเดียวกัน
 
@@ -44,7 +44,7 @@ arewarin-tutor-os/
 - เข้า `Extensions → Apps Script`
 - วางเนื้อหาจากไฟล์ `apps-script/Setup.gs` แทนโค้ดเริ่มต้น แล้ว Save
 - เลือกฟังก์ชัน `setupTutorOS` แล้วกด **Run** ยอมรับสิทธิ์ที่ Google แจ้ง
-- ระบบจะสร้างชีตทั้งหมด 13 แท็บ โดยเพิ่ม `MeetAliases`, `GroupMemberships`, `ClassRules` และ `CoursePolicies` จากโครงสร้างเดิม
+- ระบบจะสร้างชีตทั้งหมด 14 แท็บ โดยเพิ่ม `MeetAliases`, `GroupMemberships`, `ClassRules` และ `CoursePolicies` จากโครงสร้างเดิม
 - คัดลอก Spreadsheet ID จาก URL รูปแบบ `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit`
 - สคริปต์นี้ใช้เฉพาะติดตั้งฐานข้อมูลและสำรองข้อมูล ไม่ต้อง Deploy เป็น Web app
 
@@ -80,10 +80,30 @@ window.TUTOR_CONFIG = {
 2. อัปโหลดไฟล์ `index.html`, `config.js`, `assets/` และไฟล์อื่นที่จำเป็น โดยให้ `index.html` อยู่โฟลเดอร์หลัก
 3. ไป `Settings → Pages → Build and deployment → Deploy from a branch → main / (root)`
 4. เปิด URL `https://YOUR_USERNAME.github.io/arewarin-tutor-os/`
-5. กด `Connection settings → Connect Google Sheets` แล้วเลือก Google Account ที่มี **Editor access** ต่อชีตฐานข้อมูล
-6. เปิด Dashboard และทดสอบเพิ่มนักเรียน 1 คนก่อนใช้ข้อมูลจริง
+5. เปิดหน้าแรก หาก `config.js` ยังว่าง ให้กด **ตั้งค่า Google Sheets** และกรอก OAuth Web Client ID กับ Spreadsheet ID (หรือ URL) **ครั้งเดียว**; ระบบจะจำค่าตัวระบุนี้ไว้บนเครื่องดังกล่าว
+6. กด **เชื่อมบัญชี Google** เพื่ออนุญาตแอปเข้าถึง Google Sheets ที่มี **Editor access**
+7. หลังเชื่อมสำเร็จ เปิด Dashboard และทดสอบเพิ่มนักเรียน 1 คนก่อนใช้ข้อมูลจริง
 
 เมื่อ Sign in Google จะออก access token ระยะสั้นให้เบราว์เซอร์และ API จะใช้สิทธิ์ Google Sheets ของบัญชีที่เลือก โดยไม่ต้องเปิดชีตสาธารณะ
+
+
+## การแสดงการ์ดนักเรียนและข้อมูลการศึกษา (v1.4)
+
+- เปิด **Students & Courses** ดูแบบการ์ดเป็นค่าเริ่มต้น หรือสลับเป็น Table View
+- แต่ละการ์ดแสดงชื่อเล่น ชื่อจริง โรงเรียน ระดับชั้น ปีการศึกษา คอร์สปัจจุบัน ชั่วโมงคงเหลือ ชื่อ Meet ที่จำได้ และกลุ่มเรียน
+- ปุ่ม **แก้ไข** ใช้เปลี่ยนข้อมูลนักเรียนได้; เมื่อเปลี่ยนโรงเรียน/ระดับชั้น/ปีการศึกษา จะบันทึกประวัติใน `StudentEducationHistory` โดยไม่เปลี่ยน Student ID หรือชั่วโมงเรียน
+- ช่องค้นหาและตัวกรองตามชั้นเรียนและสถานะมีทั้งในมุมมองการ์ดและตาราง
+- ใน Apps Script ให้รัน `setupTutorOS()` อีกครั้ง **หลังสำรองชีตเดิม** เพื่อเพิ่มคอลัมน์ `Students` และชีต `StudentEducationHistory` โดยไม่ลบข้อมูลเดิม
+
+## การเปิดใช้งานอัตโนมัติหลังตั้งค่าครั้งแรก (v1.4)
+
+1. เปิด GitHub Pages หลังอัปเดต v1.4; หากไม่มีตัวระบุใน `config.js` หน้าตั้งค่าจะแสดงขึ้นมาแทน Demo
+2. เปิด Connection Settings, กรอก **OAuth Web Client ID** และ **Spreadsheet ID หรือ URL** แล้วบันทึก (จำค่าตัวระบุไว้บนอุปกรณ์นั้น)
+3. กด **เชื่อมบัญชี Google** ครั้งแรก เพื่อให้ Google ยืนยันบัญชีและขอสิทธิ์
+4. ภายในแท็บเดิม ตราบเท่าที่ session token ยังไม่หมดอายุ กด Refresh ได้โดยระบบกลับไปอ่านชีตจริงอัตโนมัติ
+5. หลัง token หมดอายุ/เปิดแท็บหรือ browser session ใหม่ ระบบแสดง **เชื่อมบัญชี Google** โดยตรง ไม่ต้องเข้าสู่ Settings อีกครั้ง แต่ยังอาจต้องกดบัญชีตาม Google
+
+**หากต้องการอัตโนมัติ 100% ข้ามการปิดเปิดเบราว์เซอร์และหลังโทเคนหมดอายุ** ต้องเพิ่ม backend ที่ถือเซสชันอย่างปลอดภัยหรือใช้ Apps Script hosted UI แทน static GitHub Pages + browser-only OAuth; รุ่นนี้ไม่แอบเก็บ refresh token ใน public frontend
 
 ## การใช้งานหลัก
 
@@ -120,7 +140,7 @@ window.TUTOR_CONFIG = {
 - เลือกนักเรียนที่จะถูกหักชั่วโมงและคอร์สที่ถูกต้องก่อนนำเข้า
 - ตรวจไฟล์ซ้ำด้วย SHA-256 (ถ้าใช้ secure origin) และบันทึกใน `Imports`
 - เมื่อนำเข้าแล้วเป็น **Pending** จนกด Approve; ป้องกันหักชั่วโมงโดยไม่ได้ตรวจสอบ
-- **อัปโหลดหลายไฟล์พร้อมกัน** ระบบอ่านไฟล์ทั้งหมดในชุดเดียวและแสดง Batch Overview + ป้ายสถานะแยกแต่ละไฟล์
+- **อัปโหลดหลายไฟล์พร้อมกัน** โดยกดเลือกหลายไฟล์ หรือ **ลากไฟล์หลายไฟล์มาปล่อยตรงไหนก็ได้บนหน้า Import Excel** (สูงสุด 50 ไฟล์ต่อชุด, ไฟล์ละ 10 MB) ระบบอ่านทั้งหมดในชุดเดียวและแสดง Batch Overview + ป้ายสถานะแยกแต่ละไฟล์
 - สีเขียว = จับคู่รายชื่อแล้ว, สีเหลือง = ชื่อแตกต่างหรือปรากฏเพียงบางไฟล์ (อาจเป็นคนละคาบ), สีแดง = ยังจับคู่ไม่ได้ / ไฟล์ซ้ำ / อ่านไม่สำเร็จ
 - ชื่อผู้ที่เป็นติวเตอร์ใน dropdown แสดงเวลาที่อ่านง่าย เช่น `13 นาที`, `1 ชม. 30 นาที` แทน `0:13`, `1:30`
 - เลือกเปิดไฟล์แต่ละไฟล์เพื่อแก้รายชื่อ ติวเตอร์ วันเรียน แหล่งเวลาตัดชั่วโมง และคอร์ส ก่อนบันทึกเป็น Pending แยกตามไฟล์; ข้ามไฟล์หรือกลับมาดูได้
@@ -148,7 +168,10 @@ window.TUTOR_CONFIG = {
 - **Shared Package (กระเป๋าชั่วโมงกลางของกลุ่ม)** ยังไม่รวมใน MVP นี้: ปัจจุบันหักชั่วโมงจากคอร์สของนักเรียนแต่ละคน พร้อมเลือกจำนวนนาทีต่างกันได้
 - ยังไม่มี Push Notifications, การชำระเงิน, Student/Parent Portal, Google Calendar Sync, ติวเตอร์หลายสิทธิ์, หรือรายงาน PDF ที่จัดหน้าขั้นสูง
 - กลไก Import รองรับรายงานตาราง 6 คอลัมน์ตามตัวอย่างไฟล์; รูปแบบ Google Meet ที่มีข้อมูลวันเวลา/เขตเวลาแบบใหม่อาจต้องปรับ parser เพิ่ม
-- ขณะใช้งาน Live ต้องเชื่อม Google Sign-In ใหม่เมื่อ session/access token หมดอายุ; ข้อมูล Live ไม่ถูกเก็บค้างใน localStorage
+- **Auto-reconnect แบบปลอดภัย:** ระบบจดจำเฉพาะ OAuth Client ID และ Spreadsheet ID ใน `localStorage` และเก็บ Google access token แบบชั่วคราวใน `sessionStorage` พร้อมเวลาหมดอายุ เพื่อคืนการเชื่อมต่ออัตโนมัติเมื่อ Refresh ในแท็บเดิมภายในเวลาที่โทเคนยังใช้ได้ โดยไม่ต้องเปิด Connection Settings ซ้ำ
+- **ข้อจำกัดตาม Google OAuth:** GitHub Pages เป็นเว็บ static; Google Identity Services ไม่รองรับการต่ออายุ access token แบบเบื้องหลังโดยไม่มีการกดของผู้ใช้ เมื่อหมดอายุหรือเปิดเซสชันใหม่อาจต้องกด **เชื่อมบัญชี Google** อีกครั้ง (โดยไม่ต้องกรอก Client ID / Spreadsheet ID ใหม่) และถ้า Test users ใน Google Cloud ยังไม่ได้รับสิทธิ์ ก็ต้องแก้สิทธิ์ก่อน
+- ระบบไม่บันทึกรหัสผ่าน, Client Secret หรือ refresh token ไว้ใน JavaScript / `localStorage`; อย่าเปิดโปรแกรมบนคอมพิวเตอร์สาธารณะและอย่าเพิ่มสคริปต์ที่ไม่เชื่อถือได้เข้าหน้าเว็บ
+- โหมด Demo เป็นตัวเลือกที่ผู้ใช้เลือกเองเท่านั้น เมื่อกำหนด Google Sheets แล้ว ระบบจะไม่แอบแสดงข้อมูลตัวอย่างแทนข้อมูลจริงแม้ยังไม่ได้ลงชื่อเข้าใช้
 - ข้อมูล Demo กับ Live แยกจากกัน **ไม่ได้ย้ายข้อมูลระหว่างกันโดยอัตโนมัติ**
 - ต้องต่ออินเทอร์เน็ตเพื่อใช้ Google APIs, Google OAuth และ SheetJS ผ่าน CDN
 - Backup script สร้างสำเนาทุกครั้งที่รัน; โปรดตรวจสอบสิทธิ์ผู้เข้าถึงสำเนาและการเก็บรักษาข้อมูลส่วนบุคคลตาม PDPA
