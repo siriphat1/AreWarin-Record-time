@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const code=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');
+const mem=new Map(),context=vm.createContext({window:{TUTOR_CONFIG:{}},document:{readyState:'loading',addEventListener(){}},localStorage:{getItem:k=>mem.get(k)||null,setItem:(k,v)=>mem.set(k,v)},crypto:globalThis.crypto,console,Date,Math,Map,Set,Number,String,JSON,Promise});
+vm.runInContext(code,context);const run=x=>vm.runInContext(x,context);
+assert.equal(run("isoReportDate('รายงานการเข้าร่วม เมื่อ 2026-10-27 20_12.xlsx')"),'2026-10-27');
+assert.equal(run("isoReportDate('20/03/2026 12:59')"),'2026-03-20');
+assert.equal(run("isoReportDate('20/03/2569 12:59')"),'2026-03-20');
+assert.equal(run("isoReportDate('2026-02-30')"),'');
+context.rows=[['ชื่อ','เวลาที่เข้าร่วม','เวลาที่ออก'],['Tutor','20:12','21:15']];context.col={join:1,leave:2};
+assert.equal(run("detectReportDate(rows,col,'Meet เมื่อ 2026-10-27 20_12.xlsx').date"),'2026-10-27');
+assert.equal(run("detectReportDate(rows,col,'Meet เมื่อ 2026-10-27 20_12.xlsx').source"),'filename');
+assert.equal(run("detectReportDate(rows,col,'report.xlsx').date"),'');
+context.rows=[['ชื่อ','เวลาที่เข้าร่วม','เวลาที่ออก'],['Tutor','20/03/2026 12:59','20/03/2026 13:55']];
+assert.equal(run("detectReportDate(rows,col,'Meet 2026-03-21.xlsx').date"),'2026-03-20');
+assert.equal(run("detectReportDate(rows,col,'Meet 2026-03-21.xlsx').conflict"),true);
+assert.equal(run("reportClock({tutorIndex:0,people:[{segments:[[60,90],[100,135]]}]}).minutes"),65);
+assert.equal(run("dateValid('2026-02-30')"),false);
+console.log('PASS v1.7 filename date fallback, Excel date precedence, discrepancy, missing date, overlap-free minutes');

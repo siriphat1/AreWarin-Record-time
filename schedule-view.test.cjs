@@ -1,0 +1,18 @@
+const fs=require('node:fs'), vm=require('node:vm'), assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');
+const map=new Map();
+const ctx=vm.createContext({window:{TUTOR_CONFIG:{},localStorage:{getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}}},document:{readyState:'loading',addEventListener(){}},localStorage:{getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,String(v))},console,Date,Math,Map,Set,Number,String,JSON,Promise});
+vm.runInContext(src,ctx);
+const run=x=>vm.runInContext(x,ctx);
+run('state.data=makeDemo();state.data.Schedules=[{id:"single",date:"2026-10-28",student_id:"demo-student-a",group_id:"",start_time:"18:00",end_time:"19:30",tutor:"Suthawarin",repeat_rule:"once",status:"active",notes:""},{id:"weekly",date:"2026-10-14",student_id:"",group_id:"demo-group-1",start_time:"20:00",end_time:"22:00",tutor:"Suthawarin",repeat_rule:"weekly",status:"active",notes:""}];state.scheduleWeek="2026-10-26";');
+assert.equal(run('calendarWeekStart("2026-10-28")'),'2026-10-26');
+assert.equal(run('addCalendarDays("2026-10-31",1)'),'2026-11-01');
+assert.equal(run('scheduleOccurrences("2026-10-26","2026-11-01").length'),2);
+assert.equal(run('scheduleOccurrences("2026-11-02","2026-11-08").length'),1);
+assert.ok(run('schedule()').includes('schedule-week-grid'));
+assert.ok(run('schedule()').includes('Biology Olympiad 01'));
+assert.ok(run('schedule()').includes('1 ชม. 30 นาที'));
+run('state.scheduleLayout="table"');
+assert.ok(run('schedule()').includes('schedule-table-wrap'));
+assert.ok(!run('schedule()').includes('class="schedule-week-grid"'));
+console.log('PASS schedule week range, recurring, dates, weekly/tabled layout');

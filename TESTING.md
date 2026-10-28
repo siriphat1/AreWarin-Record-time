@@ -1,3 +1,17 @@
+# v1.7.1 — Date Confirmation Regression
+
+```bash
+node tests/v171-confirmation-dates.test.cjs
+node tests/v17-import-dates.test.cjs
+node tests/smoke.test.cjs
+```
+
+- Final Confirmation แสดง DATE ในทุกแถว พร้อมปี พ.ศ. และ ISO date
+- 17 ไฟล์จากหลายวัน ต้องเห็นวันที่แตกต่างตามแต่ละไฟล์ ไม่รวมเป็นวันเดียว
+- ห้ามบันทึกแถวที่วันที่ว่างหรือไม่ถูกต้อง
+- Sessions.date และ Imports.date ถูกบันทึกพร้อมกันในแต่ละไฟล์; Attendance อ้าง session_id
+- ยืนยันอีกครั้งตอน Approve; ตรวจวันที่ทุกคาบก่อนตัดยอด
+
 # v1.7 Acceptance Checklist
 
 - [ ] วาง Excel หลายไฟล์พร้อมกันและเห็นตารางวันที่/เวลา/ชั่วโมง/ไฟล์บนสุด
