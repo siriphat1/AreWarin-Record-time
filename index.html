@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#174b3a">
+  <meta name="description" content="AreWarin Tutor OS — Student, course and learning hours management">
+  <title>AreWarin Tutor OS | Learning Hours</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="config.js"></script>
+  <script defer src="https://accounts.google.com/gsi/client"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="assets/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">A<span>·</span></span><div><strong>AreWarin</strong><small>TUTOR OS / V1</small></div></div>
+      <div class="sidebar-caption">WORKSPACE</div>
+      <nav id="nav">
+        <button class="nav-item active" data-view="dashboard"><span>◫</span> Dashboard</button>
+        <button class="nav-item" data-view="students"><span>♙</span> Students & Courses</button>
+        <button class="nav-item" data-view="groups"><span>♧</span> Class Groups</button>
+        <button class="nav-item" data-view="schedule"><span>▦</span> Class Schedule</button>
+        <button class="nav-item" data-view="manual"><span>◷</span> Record Hours</button>
+        <button class="nav-item" data-view="import"><span>⇧</span> Import Excel</button>
+        <button class="nav-item" data-view="reviews"><span>☑</span> Review & History</button>
+        <button class="nav-item" data-view="reports"><span>▥</span> Reports</button>
+      </nav>
+      <div class="side-foot"><div class="side-status"><span class="pulse"></span><span id="side-mode">DEMO MODE</span></div><p>Minimal learning management.</p><button class="side-connect" id="connect-side">⚙ Connection settings</button></div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar"><button class="mobile-toggle" id="menu-toggle" aria-label="เปิดเมนู">☰</button><div class="crumb">AREWARIN / <span id="crumb">DASHBOARD</span></div><div class="top-actions"><span class="mode-pill" id="mode-pill">DEMO DATA</span><button class="top-icon" id="refresh-btn" title="Refresh data" aria-label="รีเฟรชข้อมูล">↻</button><button class="account" id="account-btn">S</button></div></header>
+      <main id="app" class="content"><div class="loading">Preparing dashboard…</div></main>
+    </div>
+  </div>
+  <div id="modal-root"></div><div id="toast-root" aria-live="polite"></div>
+</body>
+</html>
