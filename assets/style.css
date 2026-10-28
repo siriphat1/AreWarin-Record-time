@@ -30,3 +30,25 @@
 .status-caption{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:7px 0 9px;font-size:10px;color:#8b6e37}
 @media(max-width:850px){.batch-files{grid-template-columns:1fr}}
 @media(max-width:540px){.batch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.batch-file .badge{font-size:9px}.batch-file strong{max-width:190px}}
+
+/* v1.3 verified Meet identities, per-attendee class choices and membership history */
+.review-row.status-conflict{border-left:4px solid #ac3434;background:#fff0ee}
+.soft-check{display:flex;align-items:center;gap:9px;border:1px solid #e0e8df;border-radius:9px;padding:10px;background:#f7faf7;font-size:12px;color:#275541}
+.soft-check input,.review-extras input[type=checkbox]{accent-color:#226649}
+.review-extras{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;color:#516b5a}
+.review-extras .check{display:flex;align-items:center;gap:6px}
+.class-choice{flex:1;min-width:205px}
+.class-choice select{border:1px solid #dce4dd;border-radius:9px;padding:9px;width:100%;background:white}
+.alias-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.alias-card{border:1px solid #e1e9e2;border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0}
+.alias-card strong,.alias-card small{display:block;overflow-wrap:anywhere}
+.alias-card strong{font-size:12px}
+.alias-card small{font-size:10px;color:#88968e;margin-top:4px}
+@media(max-width:760px){.alias-list{grid-template-columns:1fr}.review-extras{align-items:stretch;flex-direction:column}.class-choice{min-width:0;width:100%}}
+
+.issue-center{border-top:1px solid var(--line);padding-top:16px}
+.issue-link{width:100%;display:flex;align-items:center;flex-wrap:wrap;gap:9px;text-align:left;background:#fff;border:1px solid #e5eae6;border-left:4px solid #c4a057;padding:9px 12px;border-radius:9px;margin:7px 0}
+.issue-link.status-unknown,.issue-link.status-conflict{border-left-color:#bc5044;background:#fff9f8}
+.issue-link strong{font-size:11px;color:#283e2f}
+.issue-link small{font-size:10px;color:#859287;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.issue-link:hover{background:#f5faf6}

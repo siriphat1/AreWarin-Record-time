@@ -14,7 +14,11 @@ const TUTOR_SCHEMA = {
   Attendance: ['id','session_id','student_id','course_id','join_time','leave_time','actual_minutes','deduct_minutes','status','source_name','created_at'],
   Ledger: ['id','student_id','course_id','session_id','type','minutes','note','created_at'],
   Imports: ['id','fingerprint','filename','date','session_id','created_at'],
-  Audit: ['id','action','target_id','details','created_at']
+  Audit: ['id','action','target_id','details','created_at'],
+  MeetAliases: ['id','student_id','meet_name','email','normalized_name','normalized_email','status','verified_at','created_at'],
+  GroupMemberships: ['id','group_id','student_id','joined_at','left_at','status','created_at'],
+  ClassRules: ['id','scope_type','scope_id','basis','rounding_minutes','minimum_minutes','updated_at'],
+  CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at']
 };
 function setupTutorOS() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
