@@ -738,3 +738,9 @@ body.theme-dark .overlay{background:rgba(3,13,8,.75)}
 .import-date-inline{display:block;min-width:144px;max-width:180px;width:100%;margin-top:7px;padding:9px 10px;font:inherit;font-size:12px;border:1px solid #d8e4dc;border-radius:9px;background:var(--surface,#fff);color:inherit}
 .import-date-row-label{display:block;margin-top:8px;font-size:11px;font-weight:650;color:#946128;white-space:normal}
 .import-record-table td .import-flag{display:block;margin-top:4px;white-space:normal}
+
+/* v2.1 hourly tuition and payment */
+.hourly-setting{border:1px solid #d3e3da;background:#f5faf7;padding:16px;border-radius:16px;display:grid;gap:10px}
+.hourly-setting .field{margin:0}.hourly-dashboard-summary{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hourly-dashboard-summary strong{font-size:1.1rem;color:var(--forest,#174d3c)}
+@media(max-width:600px){.hourly-dashboard-summary{align-items:flex-start}.hourly-setting{padding:12px}}

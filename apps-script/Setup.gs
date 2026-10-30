@@ -6,8 +6,8 @@
  * No API secrets or passwords in public JavaScript.
  */
 const TUTOR_SCHEMA = {
-  Students: ['id','name','email','aliases','status','created_at','notes','full_name','school','grade_level','academic_year','updated_at'],
-  Courses: ['id','student_id','title','cycle_no','start_date','purchased_minutes','status','previous_course_id','created_at','closed_at'],
+  Students: ['id','name','email','aliases','status','created_at','notes','full_name','school','grade_level','academic_year','updated_at','hourly_rate_baht'],
+  Courses: ['id','student_id','title','cycle_no','start_date','purchased_minutes','status','previous_course_id','created_at','closed_at','billing_mode','hourly_rate_baht'],
   Groups: ['id','name','member_ids','created_at'],
   Schedules: ['id','date','student_id','group_id','start_time','end_time','tutor','repeat_rule','status','notes','created_at'],
   Sessions: ['id','date','start_time','end_time','mode','group_id','tutor','time_source','status','source_file','notes','created_at'],
@@ -19,7 +19,8 @@ const TUTOR_SCHEMA = {
   GroupMemberships: ['id','group_id','student_id','joined_at','left_at','status','created_at'],
   ClassRules: ['id','scope_type','scope_id','basis','rounding_minutes','minimum_minutes','updated_at'],
   CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at'],
-  StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at']
+  StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at'],
+  Billing: ['id','attendance_id','student_id','course_id','session_id','minutes','rate_baht','amount_satang','status','paid_at','payment_method','note','created_at','updated_at']
 };
 function setupTutorOS() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
