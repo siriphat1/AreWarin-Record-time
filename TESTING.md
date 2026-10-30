@@ -1,38 +1,41 @@
-# v2.3 Test Results & Verification
+# Validation — v2.3.1
 
-### Automated checks executed on 30 October 2026
+## Executed tests
 
-| Test | Result |
-|---|---|
-| `node --check assets/app.js` | PASS |
-| `node --check Setup.gs` (checked as `.js`) | PASS |
-| `tests/connection-and-batch.test.cjs` | PASS |
-| `tests/hourly-billing.test.cjs` | PASS |
-| `tests/schedule-view.test.cjs` | PASS |
-| `tests/smoke.test.cjs` | PASS |
-| `tests/v16-bulk-summary.test.cjs` | PASS |
-| `tests/v17-import-dates.test.cjs` | PASS |
-| `tests/v171-confirmation-dates.test.cjs` | PASS |
-| `tests/v23-operations.test.cjs` | PASS |
-| `tests/v23-browser.test.py` | PASS |
-| Student calendar/parent report browser seed | PASS |
-| Full live Sheets/OAuth/PDF CDN integration | NOT VERIFIED |
+- `node --check assets/app.js` — syntax valid
+- All 8 `tests/*.test.cjs` — PASS
+- `python tests/v231-navigation-browser.test.py` — PASS 1366x900 and 390x844
+  - default sidebar displays 5 categories + dashboard
+  - accordion category opens and closes; only one category expanded
+  - submenu navigation works; section tabs switch among related pages
+  - selected category and page highlighted
+  - collapsed desktop sidebar fits 76px with no vertical menu overflow
+  - clicking a category in collapsed mode expands sidebar automatically
+  - mobile menu and bottom navigation remain available
+- `python tests/v23-browser.test.py` — PASS leave/pause, make-up, ledger, two-stage payments, calendar, ICS, backup, journal, mobile
+- `python tests/v18-browser.test.py` — PASS historical recording, duplicate checking, import, refunds and pending workflow, adapted for the v2.2+ separation of Learning History from Student Profile
+- `python tests/v20-ui-browser.test.py` — PASS 1440px / 390px navigation, search, import, theme switch
+- `python tests/v201-dates-attendance-browser.test.py` — PASS multi-day history and file-date handling
+- `python tests/v202-no-duplicate-date-browser.test.py` — PASS hide redundant date edits
 
-### Tested workflows
+## Not covered
 
-1. Adding a pause with return estimate does not touch package `Ledger`.
-2. Adding and scheduling a make-up credit does not charge; recording through Record Make-up charges once and closes the credit.
-3. Individual group exception only hides class for that student; global recurring exception moves a single occurrence, including to a later week.
-4. Part payment followed by remainder closes the same bills while preserving each payment event.
-5. Cancelling a partially paid attendance leaves an outstanding refund obligation for the amount actually paid.
-6. Student calendar displays recorded, leave, and makeup indicators, and supports an interactive side drawer.
-7. Calendar `.ics` and private JSON files download; lesson journal writes entry; mobile main views have no horizontal body overflow at 390 px.
-8. Previous Google Meet import and legacy course-billing tests remain green.
+- No live tests against the actual Google Sheets account
+- OAuth token lifetime / real multi-editor concurrency
+- User-specific external Apps Script backup automation
 
-### Must validate on real data before deployment
+Use a backed-up Google Sheet and test one non-sensitive student/session before production deployment. No database migration is necessary when upgrading from v2.3.
 
-- Apps Script permissions and incremental schema migration for the private spreadsheet.
-- Two admin accounts editing the same spreadsheet: Google Sheets API does not provide app-level concurrent locking.
-- Date and student matching of real imported Excel reports.
-- Actual browser PDF generation using CDN-loaded `html2canvas` and `jsPDF` (no external internet in the automated browser test environment).
-- Drive scheduled backups and restoration to a copy.
+## v2.3.2 — Import Date Editor (2026-10-30)
+
+- `node --check assets/app.js`: PASS.
+- `tests/*.test.cjs`: PASS (8 existing suites).
+- `python tests/test_import_date_editor.py`: PASS with Chromium, local HTML/CSS/JS injection because network navigation is restricted in this test environment.
+  - Displays **แก้วันที่** on all unsaved import drafts even if date was extracted automatically.
+  - Opens input for one specific file; cancellation leaves draft unchanged.
+  - Typing a date without clicking Save does not mutate the draft; Final Review is blocked until the date editor is saved or cancelled.
+  - Saving updates only the chosen file's date and source note; changing first file does not change other files.
+  - `constructImportBatch()` uses updated date for Session, Imports and Audit information.
+  - Date conflicts can be confirmed; saved files cannot be edited from the pre-import table.
+  - Date editor renders on 390px mobile viewport.
+- Limitations: no live Google Sheets connection tested. Test against a backup before importing real student attendance.

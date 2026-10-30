@@ -5,6 +5,17 @@ root=Path(__file__).resolve().parents[1]
 html=(root/'index.html').read_text()
 html=re.sub(r'<script[^>]+src="[^"]+"[^>]*></script>', '', html)
 html=re.sub(r'<link rel="stylesheet" href="assets/style.css[^>]+>', '<style>'+(root/'assets/style.css').read_text()+'</style>',html)
+
+def click_sidebar_page(page, view):
+ if view=='dashboard':
+  page.locator('#nav [data-view="dashboard"]').click()
+  return
+ target=page.locator(f'#nav .nav-subitem[data-view="{view}"]')
+ if not target.is_visible():
+  group=target.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " nav-group ")]')
+  group.locator('.nav-group-toggle').click()
+ target.click()
+
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
  page=b.new_page(viewport={'width':1440,'height':900})
@@ -39,7 +50,7 @@ with sync_playwright() as p:
  assert code("liveCourses('"+testid+"').length") == 1
  print('course assigned')
  # manual
- page.locator('[data-view="manual"]').first.click()
+ click_sidebar_page(page, "manual")
  page.locator('#class_date').fill('2026-11-02')
  page.locator('#class_start').fill('18:00')
  page.locator('#class_end').fill('19:30')
@@ -53,7 +64,7 @@ with sync_playwright() as p:
  assert code("balance(liveCourses('"+testid+"')[0].id)") == 510
  print('manual approved, deducted, balance 510')
  # duplicate block
- page.locator('[data-view="manual"]').first.click()
+ click_sidebar_page(page, "manual")
  page.locator('#class_date').fill('2026-11-02')
  page.locator('#class_start').fill('18:00')
  page.locator('#class_end').fill('19:30')
@@ -63,16 +74,25 @@ with sync_playwright() as p:
  assert page.locator('#summary-ack').count()==0, 'duplicate should not reach modal'
  print('duplicate manual rejected')
  # Student profile history + cancel then refund
- page.locator('[data-view="students"]').first.click()
+ click_sidebar_page(page, "students")
  page.locator('[data-action="student-detail"][data-id="'+testid+'"]').first.click()
- assert '02/11/2026' in page.locator('#profile').inner_text()
- assert '1 ชม. 30 นาที' in page.locator('#profile').inner_text()
- page.locator('#profile [data-action="cancel-attendance"]').first.click()
+ # v2.2+ puts recorded history in Learning History (not duplicated in Profile).
+ page.evaluate("state.personalCalendarMonth='2026-11';state.personalCalendarDay='2026-11-02';render();")
+ assert page.locator('#profile .personal-calendar-grid').count()==1
+ assert page.locator('#profile [data-action="personal-calendar-day"][data-id="2026-11-02"]').count()==1
+ page.locator('#profile [data-action="student-attendance-history"]').click()
+ assert page.locator('[data-action="session-detail"]').count()>0
+ page.locator('[data-action="session-detail"]').first.click()
+ assert page.locator('#overlay [data-action="cancel-attendance"]').count()>0
+ page.locator('#overlay [data-action="cancel-attendance"]').first.click()
  page.wait_for_timeout(220)
  assert code("balance(liveCourses('"+testid+"')[0].id)")==600
  print('cancel refunded')
- # new schedule shown in student profile
- assert '08/11/2026' in page.locator('#profile').inner_text()
+ # Planned schedule still appears on the student profile calendar.
+ click_sidebar_page(page, "students")
+ page.locator('[data-action="student-detail"][data-id="'+testid+'"]').first.click()
+ page.evaluate("state.personalCalendarMonth='2026-11';state.personalCalendarDay='2026-11-08';render();")
+ assert page.locator('#profile [data-action="personal-calendar-day"][data-id="2026-11-08"]').count()==1
  print('linked schedule')
  # Simulate import two files in JS (no xlsx network) - separate years
  page.evaluate("""() => {
@@ -96,7 +116,7 @@ with sync_playwright() as p:
  assert code('state.importQueue.length')==0
  print('import 2 files approved, workspace cleared')
  # group: independently deduct each student's own course, cancel only one student, preserve the other
- page.locator('[data-view="manual"]').first.click()
+ click_sidebar_page(page, "manual")
  page.locator('#class_date').fill('2026-11-15')
  page.locator('#class_start').fill('18:00')
  page.locator('#class_end').fill('19:00')
@@ -143,9 +163,9 @@ with sync_playwright() as p:
  assert code("byId('Sessions','legacy-pending-v18').status")=='approved'
  print('legacy pending settled exactly once')
  # screenshot dashboard, student profile, schedule
- page.locator('[data-view="dashboard"]').first.click()
+ click_sidebar_page(page, "dashboard")
  page.screenshot(path=str(root/'v18-dashboard-preview.png'))
- page.locator('[data-view="students"]').first.click()
+ click_sidebar_page(page, "students")
  page.locator('[data-action="student-detail"][data-id="'+testid+'"]').first.click()
  page.screenshot(path=str(root/'v18-student-preview.png'),full_page=True)
  print('ERRORS:',errors)

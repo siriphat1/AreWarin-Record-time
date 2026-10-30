@@ -29,7 +29,8 @@ with sync_playwright() as p:
   assert page.locator('.student-more summary').count()>=1
   page.screenshot(path=str(root/('preview-students-mobile.png' if width<500 else 'preview-students-desktop.png')),full_page=True)
   # import stepper and dropzone
-  (page.locator('.mobile-bottom-nav [data-view="import"]') if width<761 else page.locator('.nav-item[data-view="import"]')).click()
+  if width>=761:page.locator('[data-nav-group="attendance"]').click()
+  (page.locator('.mobile-bottom-nav [data-view="import"]') if width<761 else page.locator('#nav-sub-attendance .nav-item[data-view="import"]')).click()
   assert page.locator('.import-progress-step').count()==4
   assert page.locator('#excel-dropzone input[type=file][multiple]').count()==1
   page.screenshot(path=str(root/('preview-import-mobile.png' if width<500 else 'preview-import-desktop.png')),full_page=True)

@@ -1,63 +1,55 @@
-# AreWarin Tutor OS v2.3.0
+# AreWarin Tutor OS v2.3.1 — Compact Navigation
 
-**Operations & Teaching Management · Botanical Minimal Pro**  
-GitHub Pages + private Google Sheets + Google OAuth. Interface: Thai/English.
+เวอร์ชันนี้อัปเกรด **การจัดหมวดหมู่เมนูและ UX การนำทาง** ต่อจาก v2.3 โดย **ไม่แก้ Schema, ไม่เปลี่ยนกติกาการลงเวลาหรือชำระเงิน และไม่ลบข้อมูลเดิม**
 
-## New in v2.3 (consolidated upgrade)
+## โครงสร้างเมนูใหม่
 
-1. **Leave & Learning Pause**: record leave, a pause period, optional course scope, expected return; explicit confirmation on returning; historical audit. A leave/pause record alone never changes purchased balances or billing.
-2. **Make-up Class Credits**: trace original date and learner, plan a new date/time, check for conflicting schedules, then record class in **Record Hours**. The credit is marked completed in the same logical save as the attendance, billing/ledger. Cancelling that attendance reopens the scheduled make-up. Does not deduct while merely scheduling. To protect against accidental double deductions, importing a Meet file does **not** automatically link an existing make-up; use the dedicated Record Make-up action to close its credit.
-3. **One-day Schedule Exceptions**: cancel or reschedule a single occurrence without deleting the weekly recurrence; for groups choose one student or everyone. Calendar remains the source of scheduled (not necessarily attended) lessons.
-4. **Teaching Journal**: subject taught, homework, next-class follow-up, linked by Attendance ID and stored in `LessonNotes`.
-5. **Payment Center**: combine hourly bills, record part payments and full payments, allocate across oldest bills first, retain `Payments` history and partial status. Cancelling a paid/part-paid attendance marks refund due, not refunded. Actual refunds require explicit confirmation.
-6. **Smart Google Meet Attendance Review**: warnings for reconnects / multiple joined intervals and mismatches between actual and deductible time. Uses the existing segment merging, checks overlaps and confirmation flow.
-7. **Parent Report Pro**: filter learner, month, course/cycle; CSV and direct PDF download. Direct PDF uses the online CDN dependencies `html2canvas` and `jsPDF` to preserve Thai characters as rendered graphics; if unavailable, the print-to-PDF fallback is offered. These reports include only approved, noncancelled Attendance, not future scheduled classes.
-8. **Reminders Center**: in-app flags for planned classes not yet recorded today, make-ups to plan, expected return dates, low package hours, overdue hourly bills. Shown when the web app is opened/refreshed. **Not a push notification / background monitoring service.**
-9. **System Health & Backup**: checks balances, imports, billing, make-ups, ledger mismatches, audit; exports **private** JSON. Demo-only JSON restore. The Apps Script includes optional daily spreadsheet-copy backup and restoring the live system means validating and switching to an existing Google Drive backup copy, **not** destructively overwriting a live sheet via the browser.
-10. **Calendar Export & Interface**: 90-day `.ics` export; personal calendar with private, group, makeup, leave colors, plus side drawer for class details.
+| หมวดหลัก | เมนูย่อย |
+|---|---|
+| ภาพรวม | Dashboard (หน้าเริ่มต้น ไม่ซ่อนในเมนูย่อย) |
+| นักเรียนและคอร์ส | นักเรียนและคอร์ส · กลุ่มเรียน |
+| ตารางและการสอน | ตารางเรียน · ลาหยุด/ชดเชย · สมุดบันทึกการสอน |
+| ลงเวลาและประวัติ | ลงเวลาเรียน · นำเข้า Google Meet · ตรวจสอบ/แก้ไขคาบ · ประวัติการเรียน |
+| การเงินและรายงาน | ค่าคาบรายชั่วโมง · รายงานผู้ปกครอง |
+| ติดตามและดูแลระบบ | แจ้งเตือน · ตรวจสอบ/สำรองข้อมูล |
 
-All v2.2 functionality — class groups, packages, hourly courses and course cycles, time recording, multi-Excel imports, student calendar, parent reporting, aliases — is retained.
+- เริ่มต้นเห็นเพียง **ภาพรวม + 5 หมวดหลัก**; กดหมวดเพื่อขยายเมนูย่อย (เปิดทีละหมวด)
+- เมื่อเปิดเมนูย่อย จะแสดงแถบ **สลับหน้าภายในหมวดเดียวกัน** ในพื้นที่ทำงานด้านบน เพื่อเข้าถึงรายการที่ทำงานร่วมกันได้โดยไม่ย้อนกลับเมนูด้านข้าง
+- เมื่อกดปุ่มยุบ Sidebar บนคอมพิวเตอร์ จะแสดงไอคอน 6 รายการโดยไม่มีรายการย่อยยาวลงไป; กดไอคอนหมวดเพื่อขยาย Sidebar และเมนูย่อย
+- มือถือยังมีแถบทางลัดด้านล่าง และเปิดหมวดทั้งหมดผ่านเมนูด้านข้างได้
+- การค้นหาทั่วระบบ ปุ่มลงเวลาเร่งด่วน ทางลัดภายในหน้า และเมนูเดิมยังคงทำงาน
 
-## Deployment from v2.2 — REQUIRED database migration
+> **หมายเหตุ:** "รวมไว้ในส่วนเดียวกัน" ในเวอร์ชันนี้หมายถึง **หมวดการทำงานร่วมกันพร้อมแถบสลับหน้าที่ชัดเจน** ไม่ได้รวมข้อมูลตารางเรียน การเข้าร่วม และการเงินไว้ในตารางเดียว ซึ่งเสี่ยงทำให้รายการตัดชั่วโมงสับสน
 
-1. **Back up your actual Google Spreadsheet**, using Google Sheets → File → Make a copy, before changing it. Check the copy.
-2. In your original *private* Spreadsheet, open **Extensions → Apps Script**. Replace the bound `Setup.gs` with `apps-script/Setup.gs` in this release, then run `setupTutorOS()` and grant the requested permissions. This function checks headers before touching existing data and creates five additional sheets:
+## วิธีอัปเดตจาก v2.3
 
-   | New sheet | Purpose |
-   |---|---|
-   | `LeaveRecords` | Leave/pause periods, return dates |
-   | `ScheduleExceptions` | One-day exceptions (single learner or group) |
-   | `MakeupCredits` | Original and replacement make-up events |
-   | `LessonNotes` | Lesson journal entries |
-   | `Payments` | Individual cash receipts for hourly lessons |
+1. สำรองไฟล์เว็บไซต์ปัจจุบันไว้
+2. เปิด ZIP แบบ **Update only** และแทนที่ 3 ไฟล์: `index.html`, `assets/app.js`, `assets/style.css` ใน GitHub Pages
+3. **เก็บ `config.js` เดิม** ที่ตั้งค่า Google Client ID / Spreadsheet ID ไว้ ห้ามใช้ `config.js` เปล่าจากตัวอย่างทับค่าเดิม
+4. เปิดเว็บไซต์ แล้วกด `Ctrl + Shift + R` (หรือเคลียร์ cache เว็บไซต์บนมือถือ)
+5. ทดลองกดเมนูหมวด ดูแถบสลับหน้าภายในหมวด และบันทึกคาบตัวอย่างเพื่อยืนยันว่าระบบออนไลน์ทำงาน
 
-3. Check the five new sheets exist and their header rows match `Setup.gs`. **Do not** manually delete or reorder old sheets and columns.
-4. Publish the new `index.html`, `assets/app.js`, and `assets/style.css` to your GitHub Pages repository. **Preserve your own `config.js` from v2.2** (Google Client ID / Spreadsheet ID); don't replace it with the empty template in the full archive.
-5. Refresh the deployed site with **Ctrl + Shift + R** and authenticate with Google if prompted.
-6. Do a controlled trial using a test learner and test course: create leave, a make-up credit, schedule it, record it, inspect **Ledger**, **Billing**, **Payments**, **Audit**, and compare the Sheets row entries and totals before using real learner data.
+**ไม่ต้องรัน `setupTutorOS()` ใหม่สำหรับการอัปเกรดจาก v2.3 เพราะไม่มีการเปลี่ยนฐานข้อมูล**
 
-### Optional Google Drive daily backup
+หากอัปเกรดจาก **v2.2 หรือเก่ากว่า** โดยตรง ต้องดำเนินการอัปเกรดฐานข้อมูลของ v2.3 ก่อน (โปรดอ่าน `UPGRADE-from-v2.2.md`) จากนั้นใช้ไฟล์เว็บ v2.3.1
 
-Run `installDailyBackup()` in the same Apps Script project after approving the Google Drive scopes. It creates a time-based trigger for `backupTutorOS()` that makes a copy of the spreadsheet. **This trigger is not installed automatically**. Verify in Apps Script → Triggers and check the backup copies; review Drive storage and your backup retention practice.
+## ฟังก์ชันที่ยังคงเดิม
 
-### Recovering from a backup
+- นักเรียน คอร์สแพ็กเกจ คอร์สรายชั่วโมง ต่อคอร์ส และกลุ่มเรียน
+- Class Schedule, Student Personal Calendar, Leave / Learning Pause / Make-up Class
+- บันทึกชั่วโมง Manual, Import Google Meet หลายไฟล์, ตรวจสอบ Pending, ป้องกันชั่วโมงซ้ำ, คืนชั่วโมง
+- Hourly Billing, การชำระบางส่วน, รายงานผู้ปกครอง CSV/PDF, Calendar Export ICS
+- สมุดบันทึกคาบเรียน แจ้งเตือนในระบบ ตรวจความถูกต้องและส่งออกข้อมูลสำรอง
 
-**Live Google Sheets**: inspect a dated spreadsheet copy in Drive, verify contents, then intentionally switch to the chosen backup's Spreadsheet ID by updating your existing `config.js` (and authorized sharing). Do not overwrite the original until you have verified the backup.  
-**Demo only**: System Health & Backup → Select backup JSON. This replaces *local demo data only*; it cannot write to live Google Sheets.
+## ข้อจำกัด
 
-## Operational guardrails
+- งานนี้เป็นการเปลี่ยน UI/Navigation ไม่ใช่การแก้ฐานข้อมูลหรือระบบความปลอดภัยการทำธุรกรรม
+- ชุดทดสอบใช้ข้อมูลจำลอง Chromium; ไม่ได้เชื่อมกับ Google Sheets จริงของผู้ใช้
+- หลีกเลี่ยงการนำไฟล์สำรองข้อมูลนักเรียนจริงขึ้น GitHub Pages (Public Repository)
+- หากข้อมูลสำคัญ ให้ตรวจการบันทึกและชั่วโมงคงเหลือใน Google Sheets จริงหลังอัปเกรด
 
-- *Planned != Attended*: scheduling, leaving, rescheduling, or creating a make-up credit do **not** count as attendance or deduct package minutes.
-- *Package != Hourly*: package attendance records a negative `Ledger` debit; hourly attendance creates a `Billing` invoice; recording a partial payment is a separate `Payments` entry. A paid invoice is not automatically a refund.
-- *Single vs group*: leave for one group member does not cancel the group for everyone. For **course-scoped leave**, existing `Schedules` lack a `course_id` field, so only all-course leave automatically hides private schedule items; adjust the affected occurrence manually when using course-specific leave.
-- *Migrations*: Google Sheets stores remain tied to their existing primary IDs; do not change header order.
-- *Concurrency limitation*: direct Google Sheets API batch updates are not the equivalent of an isolated, server-locked database transaction. Avoid multiple administrators writing simultaneously; validate your totals and backups. For heavy multi-user usage consider a server-side transaction service.
-- *Sensitive information*: never publish real student data, downloaded JSON backups, or your actual `config.js` with private account details in a public repository. This app ships with **no actual student names**.
-- *PDF dependencies*: `html2canvas` / `jsPDF` need internet access to load from jsDelivr. If blocked, the print/PDF alternative remains available. A PDF download is generated in-browser, not emailed to parents.
-- *Notifications*: in-app dashboard and reminders only; no external SMS/LINE/email dispatch or notifications while the webpage is closed.
+ดู `TESTING.md` และ `CHANGELOG-v2.3.1.md` สำหรับรายละเอียด
 
-## Tests
 
-Use `node --check assets/app.js`, run all `node tests/*.test.cjs`, and (with Playwright and Chromium) `python tests/v23-browser.test.py`. The tests cover leave/pause, recurring exceptions and individual group exceptions, make-up credits, double-charge prevention for manually linked credits, ledger & partial-billing refunds, CSV, and mobile layout. Browser and VM tests use mock/demo data; live OAuth & actual Google Sheets edits require your private account.
-
-**For an incremental update, use `AreWarin-Tutor-OS-v2.3-update-only.zip`.** It intentionally omits `config.js` to protect your working configuration.
+## v2.3.2 — แก้วันที่ได้ทุกไฟล์ก่อนบันทึก
+หน้า Import Google Meet → Imported Class Summary → กด **แก้วันที่** ใต้วันที่ของแต่ละไฟล์ เลือกวันใหม่ แล้วกด **บันทึกวันที่** หากไม่ต้องการเปลี่ยน ให้กด **ยกเลิก** วันที่ที่แก้จะถูกนำไปใช้ใน Final Review และบันทึกจริง เฉพาะไฟล์นั้น ไม่ต้องแก้วันที่ไฟล์อื่น ไม่มีการเปลี่ยน schema Google Sheets และไม่ต้องรัน Setup.gs ใหม่จาก v2.3.1
