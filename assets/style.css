@@ -854,3 +854,21 @@ body.theme-dark .workspace-tab.active{background:#315a40;border-color:#416b4c;co
 .theme-dark .import-date-edit-btn{color:#9fdfbb}
 .theme-dark .import-date-editor .import-date-row-label,.theme-dark .import-date-cell .import-date-value{color:#d7e9dd}
 @media(max-width:640px){.import-date-editor{min-width:158px}.import-date-edit-btn{font-size:12px}}
+
+/* AreWarin Tutor OS v2.4 — shared UI additions */
+.v24-filters{display:grid;grid-template-columns:minmax(160px,220px) minmax(210px,340px);gap:14px;margin-bottom:18px}
+.v24-filters .field{margin:0}.v24-student-select{max-width:420px;margin-bottom:20px}
+.import-time-cell{min-width:175px;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.import-time-editor{width:195px;max-width:100%;display:grid;gap:6px;margin-top:6px;padding:10px;background:var(--surface-soft,#f5f8f4);border:1px solid #dae6da;border-radius:10px}
+.import-time-editor label{display:grid;gap:5px;font-size:11px;color:var(--text-secondary,#466b56);font-weight:600}
+.import-time-editor input{width:100%;min-width:0;padding:7px;border:1px solid #cbded0;border-radius:8px;background:white;color:#203b31}
+.import-time-editor .button-row{flex-wrap:wrap;gap:5px}.import-smart-alert{padding:16px 18px;background:var(--surface-soft,#f5f8f4);border:1px solid #dbe7db;border-radius:14px;margin:12px 0 16px}
+.import-smart-alert .panel-head{gap:12px;margin-bottom:8px}.import-smart-alert .helper{margin:5px 0}
+.v24-timeline{position:relative;margin-top:24px;padding-left:22px;border-left:2px solid #dae6db;display:grid;gap:18px}
+.v24-timeline-item{position:relative;display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;padding:12px 16px;border:1px solid var(--line,#dfe8df);border-radius:12px;background:var(--card-bg,#fff)}
+.v24-timeline-item:before{content:'';position:absolute;left:-29px;top:19px;width:12px;height:12px;background:#2c7756;border:3px solid white;border-radius:50%;box-shadow:0 0 0 1px #a9c8af}
+.v24-timeline-item.payment:before{background:#4287ac}.v24-timeline-item.leave:before{background:#c08b3d}.v24-timeline-item.cancelled:before{background:#bc6969}
+.v24-timeline-date{font-size:12px;color:var(--text-secondary,#587366);font-weight:700}.v24-timeline-item strong{font-size:13px;color:var(--text-primary,#214936)}.v24-timeline-item p{font-size:12px;color:var(--text-secondary,#587366);margin:5px 0 0;white-space:normal;overflow-wrap:anywhere}
+.v24-pdf-canvas{position:fixed;left:-12000px;top:0;width:760px;min-height:1050px;padding:50px;background:#fff;color:#173f30;z-index:-10;box-sizing:border-box;font-family:'Noto Sans Thai',Arial,sans-serif}
+.v24-receipt{background:#fff;color:#234b39;font-family:'Noto Sans Thai',Arial,sans-serif;font-size:13px}.v24-receipt-head{display:flex;align-items:start;justify-content:space-between;gap:30px;border-bottom:2px solid #285943;padding-bottom:20px;margin-bottom:25px}.v24-receipt h1{font-size:24px;margin:12px 0}.v24-receipt p{font-size:12px;color:#61796b}.receipt-brand{font-size:12px;font-weight:800;letter-spacing:3px;color:#2b7052}.receipt-status{padding:9px 18px;border-radius:20px;background:#e5f2e9;color:#1b7147;font-weight:800}.receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:20px;background:#f5f8f5;border-radius:12px}.receipt-grid small{display:block;color:#6c8577}.receipt-grid strong{display:block;margin-top:5px;word-break:break-word}.v24-receipt table{width:100%;border-collapse:collapse;margin:30px 0}.v24-receipt th,.v24-receipt td{padding:12px 6px;border-bottom:1px solid #dce6dd;text-align:left}.v24-receipt th{background:#edf5ef}.receipt-total{display:flex;align-items:center;justify-content:space-between;font-size:18px;border-top:2px solid #24573d;padding-top:20px}.receipt-foot{margin-top:50px;border-top:1px solid #dfe9df;padding-top:18px}
+@media(max-width:760px){.v24-filters{grid-template-columns:minmax(0,1fr)}.v24-timeline-item{grid-template-columns:1fr;gap:5px}.import-time-editor{width:170px}}
