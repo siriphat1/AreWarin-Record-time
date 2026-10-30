@@ -1,7 +1,7 @@
 /**
  * AreWarin Tutor OS - Google Sheets database setup & backup.
  * Attach this script to a PRIVATE Google Spreadsheet via Extensions > Apps Script.
- * Run setupTutorOS() once, approve permissions.
+ * Run setupTutorOS() on installation and after the v2.3 upgrade; it preserves matching older sheets and adds new ones.
  * GitHub Pages app connects directly with OAuth + Google Sheets API.
  * No API secrets or passwords in public JavaScript.
  */
@@ -20,7 +20,12 @@ const TUTOR_SCHEMA = {
   ClassRules: ['id','scope_type','scope_id','basis','rounding_minutes','minimum_minutes','updated_at'],
   CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at'],
   StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at'],
-  Billing: ['id','attendance_id','student_id','course_id','session_id','minutes','rate_baht','amount_satang','status','paid_at','payment_method','note','created_at','updated_at']
+  Billing: ['id','attendance_id','student_id','course_id','session_id','minutes','rate_baht','amount_satang','status','paid_at','payment_method','note','created_at','updated_at'],
+  LeaveRecords: ['id','student_id','course_id','kind','start_date','end_date','expected_return','reason','status','created_at','updated_at'],
+  ScheduleExceptions: ['id','schedule_id','occurrence_date','student_id','kind','replacement_date','start_time','end_time','reason','created_at','updated_at'],
+  MakeupCredits: ['id','student_id','course_id','origin_schedule_id','origin_date','planned_minutes','scheduled_date','start_time','end_time','tutor','status','linked_attendance_id','notes','created_at','updated_at'],
+  LessonNotes: ['id','attendance_id','student_id','course_id','title','homework','follow_up','created_at','updated_at'],
+  Payments: ['id','billing_id','amount_satang','method','paid_on','note','created_at']
 };
 function setupTutorOS() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

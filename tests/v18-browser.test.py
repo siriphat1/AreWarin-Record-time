@@ -85,7 +85,7 @@ with sync_playwright() as p:
  }""")
  assert page.locator('#import-summary').count()==1
  assert page.locator('#import-config #import-date').count()==0
- assert page.locator('#import-people #import-date').count()==1
+ assert page.locator('#import-people #import-date').count()==0  # v2.0.1 hides date correction for valid dates
  assert page.locator('.import-record-table tbody tr').count()==2
  page.locator('[data-action="preview-batch-import"]').last.click()
  page.locator('#summary-ack').check()

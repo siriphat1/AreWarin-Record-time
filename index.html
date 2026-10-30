@@ -4,22 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#143d31">
-  <meta name="description" content="AreWarin Tutor OS v2.2.0 — Date & Attendance History Fix">
-  <title>AreWarin Tutor OS | Learning & Hourly Billing</title>
+  <meta name="description" content="AreWarin Tutor OS v2.3.0 — Leave, Make-up, Payments & Reports">
+  <title>AreWarin Tutor OS v2.3 | Operations, Calendar & Billing</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css?v=2.2.0">
+  <link rel="stylesheet" href="assets/style.css?v=2.3.0">
   <script src="config.js"></script>
   <script defer src="https://accounts.google.com/gsi/client"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script defer src="assets/app.js?v=2.2.0"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script defer src="assets/app.js?v=2.3.0"></script>
 </head>
 <body>
   <div class="shell">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="brand-mark">A<span>·</span></span><div><strong>AreWarin</strong><small>LEARNING STUDIO · V2.2.0</small></div><button class="side-collapse" id="sidebar-collapse" aria-label="ยุบเมนูด้านข้าง" title="ยุบเมนูด้านข้าง">⇤</button></div>
+      <div class="brand"><span class="brand-mark">A<span>·</span></span><div><strong>AreWarin</strong><small>LEARNING STUDIO · V2.3.0</small></div><button class="side-collapse" id="sidebar-collapse" aria-label="ยุบเมนูด้านข้าง" title="ยุบเมนูด้านข้าง">⇤</button></div>
       <nav id="nav" aria-label="เมนูหลัก">
         <div class="nav-section">WORKSPACE</div>
         <button class="nav-item active" data-view="dashboard"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="nav-label">ภาพรวม</span></button>
@@ -30,9 +32,13 @@
         <button class="nav-item" data-view="manual"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg></span><span class="nav-label">ลงเวลาเรียน</span></button>
         <button class="nav-item" data-view="import"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M4 16v4h16v-4"/></svg></span><span class="nav-label">นำเข้า Google Meet</span></button>
         <button class="nav-item" data-view="reviews"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8m-8 5 2.5 2.5L16 10"/></svg></span><span class="nav-label">ประวัติและแก้ไข</span></button>
+        <button class="nav-item" data-view="leave"><span class="nav-icon">◴</span><span class="nav-label">ลาหยุดและชดเชย</span></button>
+        <button class="nav-item" data-view="journal"><span class="nav-icon">✎</span><span class="nav-label">สมุดบันทึกการสอน</span></button>
+        <button class="nav-item" data-view="notifications"><span class="nav-icon">♧</span><span class="nav-label">แจ้งเตือนติดตาม</span></button>
         <div class="nav-section nav-section-secondary">INSIGHTS</div>
         <button class="nav-item" data-view="history"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></span><span class="nav-label">ประวัติการเรียน</span></button>
         <button class="nav-item" data-view="billing"><span class="nav-icon">฿</span><span class="nav-label">ค่าคาบรายชั่วโมง</span></button>
+        <button class="nav-item" data-view="system"><span class="nav-icon">✚</span><span class="nav-label">สุขภาพและสำรองข้อมูล</span></button>
         <button class="nav-item" data-view="reports"><span class="nav-icon"><svg class="aw-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M7 16V9m5 7V4m5 12v-5" stroke-linecap="round"/></svg></span><span class="nav-label">รายงาน</span></button>
       </nav>
       <div class="side-foot"><div class="side-status"><span class="pulse"></span><span id="side-mode">DEMO MODE</span></div><p>Smart learning. Clear records.</p><button class="side-connect" id="connect-side">⚙ ตั้งค่าการเชื่อมต่อ</button></div>
@@ -49,6 +55,6 @@
     <button type="button" data-view="import" class="mobile-nav-item" aria-label="นำเข้า Meet"><span>⇧</span><small>Meet</small></button>
     <button type="button" id="mobile-more-btn" class="mobile-nav-item" aria-label="เมนูเพิ่มเติม"><span>☷</span><small>เพิ่มเติม</small></button>
   </nav>
-  <div id="modal-root"></div><div id="toast-root" aria-live="polite"></div>
+  <div id="calendar-drawer-root"></div><div id="modal-root"></div><div id="toast-root" aria-live="polite"></div>
 </body>
 </html>
