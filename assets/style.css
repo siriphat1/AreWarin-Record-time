@@ -872,3 +872,29 @@ body.theme-dark .workspace-tab.active{background:#315a40;border-color:#416b4c;co
 .v24-pdf-canvas{position:fixed;left:-12000px;top:0;width:760px;min-height:1050px;padding:50px;background:#fff;color:#173f30;z-index:-10;box-sizing:border-box;font-family:'Noto Sans Thai',Arial,sans-serif}
 .v24-receipt{background:#fff;color:#234b39;font-family:'Noto Sans Thai',Arial,sans-serif;font-size:13px}.v24-receipt-head{display:flex;align-items:start;justify-content:space-between;gap:30px;border-bottom:2px solid #285943;padding-bottom:20px;margin-bottom:25px}.v24-receipt h1{font-size:24px;margin:12px 0}.v24-receipt p{font-size:12px;color:#61796b}.receipt-brand{font-size:12px;font-weight:800;letter-spacing:3px;color:#2b7052}.receipt-status{padding:9px 18px;border-radius:20px;background:#e5f2e9;color:#1b7147;font-weight:800}.receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:20px;background:#f5f8f5;border-radius:12px}.receipt-grid small{display:block;color:#6c8577}.receipt-grid strong{display:block;margin-top:5px;word-break:break-word}.v24-receipt table{width:100%;border-collapse:collapse;margin:30px 0}.v24-receipt th,.v24-receipt td{padding:12px 6px;border-bottom:1px solid #dce6dd;text-align:left}.v24-receipt th{background:#edf5ef}.receipt-total{display:flex;align-items:center;justify-content:space-between;font-size:18px;border-top:2px solid #24573d;padding-top:20px}.receipt-foot{margin-top:50px;border-top:1px solid #dfe9df;padding-top:18px}
 @media(max-width:760px){.v24-filters{grid-template-columns:minmax(0,1fr)}.v24-timeline-item{grid-template-columns:1fr;gap:5px}.import-time-editor{width:170px}}
+
+/* v2.4.1 Student-first Record Hours */
+.manual-v241{max-width:1000px;margin-inline:auto}.manual-step{display:flex;align-items:center;gap:13px;margin:12px 0 18px}.manual-step>span{width:38px;height:38px;flex:0 0 38px;border-radius:12px;background:#e5f2e9;color:#174d3c;display:grid;place-items:center;font-weight:800}.manual-step strong{font-size:1.05rem;color:#174d3c}.manual-step p{margin:3px 0 0}.manual-search,.manual-picker{width:100%;max-width:100%;border:1px solid #d9e5dc;border-radius:12px;padding:13px 15px;background:#fff;color:inherit;font:inherit}.manual-search{margin:6px 0 10px}.manual-card-container{margin:16px 0 24px}.manual-empty{border:1px dashed #bdd5c5;background:#f6faf7;border-radius:16px;text-align:center;padding:30px 16px;color:#64816e}.manual-person-card{display:flex;align-items:flex-start;gap:16px;padding:22px;border:1px solid #d5e5d9;border-radius:18px;background:linear-gradient(135deg,#f1f8f2,#fff);margin:10px 0}.manual-avatar{width:54px;height:54px;flex:0 0 54px;background:#174d3c;color:#fff;border-radius:15px;display:grid;place-items:center;font-weight:750;font-size:23px}.manual-person-main{flex:1;min-width:0}.manual-person-main>strong{font-size:1.12rem;color:#174d3c}.manual-person-main>p{margin:3px 0 10px;color:#647d70}.manual-card-tag{color:#286449;font-size:.88rem;margin-bottom:13px}.manual-course-choice label{display:block;font-size:.85rem;margin-bottom:6px;font-weight:650}.manual-course-choice select{width:100%;max-width:550px;padding:10px;border-radius:10px;border:1px solid #cfdfd4;background:#fff}.manual-card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.manual-included{display:flex;align-items:center;gap:7px;white-space:nowrap}.manual-included input,.leave-makeup-label input{width:18px;height:18px;min-width:18px;flex:none}.manual-group-heading{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin:12px 0;color:#174d3c}.manual-v241-hidden{display:none!important}.manual-v241 #manual-form{gap:14px}.leave-makeup-area{border:1px solid #cfdfd4;background:#f5faf6;border-radius:13px;padding:15px}.leave-makeup-label{display:flex;align-items:center;gap:11px;font-weight:650}.leave-makeup-area [hidden]{display:none!important}.leave-makeup-area #leave-makeup-fields{padding-top:14px}@media(max-width:650px){.manual-person-card{padding:15px;gap:11px}.manual-avatar{width:42px;height:42px;flex-basis:42px}.manual-group-heading{display:block}}
+
+
+/* v2.4.2: read-only live duration and package balance adjustment summary. */
+.edit-att-result{background:#edf6ef;border:1px solid #d1e6d6;border-radius:15px;padding:17px 19px;display:flex;flex-direction:column;gap:5px;color:#355b45}
+.edit-att-result span{font-size:12px;font-weight:700}
+.edit-att-result strong{font-size:clamp(25px,4vw,31px);font-weight:800;color:#194a34;line-height:1.3}
+.edit-att-result small{font-size:11px;line-height:1.65;color:#658273}
+.edit-att-comparison{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.edit-att-comparison>div{background:#f8faf7;border:1px solid #e0eae1;border-radius:12px;padding:13px;min-width:0;display:flex;flex-direction:column;gap:9px}
+.edit-att-comparison small{font-size:11px;color:#6e8577}
+.edit-att-comparison strong{font-size:15px;color:#244d3d;overflow-wrap:anywhere}
+.edit-att-comparison strong[data-direction="refund"]{color:#25835a}
+.edit-att-comparison strong[data-direction="deduct"]{color:#a16a20}
+.edit-att-comparison strong[data-direction="invalid"]{color:#a44f43}
+@media(max-width:530px){.edit-att-comparison{grid-template-columns:repeat(2,minmax(0,1fr))}.edit-att-comparison>div:last-child{grid-column:1/-1}.edit-att-result{padding:14px}}
+/* Keep the reason input visible on short mobile screens (no floating save button over it). */
+#edit-att-form>.btn[type="submit"]{position:static;box-shadow:none}
+body.theme-dark .edit-att-result{background:#233f30;border-color:#416b50;color:#d6ecdc}
+body.theme-dark .edit-att-result strong{color:#e0f5e7}
+body.theme-dark .edit-att-result small{color:#a9c7b3}
+body.theme-dark .edit-att-comparison>div{background:#23382b;border-color:#41634b}
+body.theme-dark .edit-att-comparison small{color:#b0cdb7}
+body.theme-dark .edit-att-comparison strong{color:#e0f5e7}
