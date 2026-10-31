@@ -8,8 +8,39 @@ function message(text,error=false){document.querySelector('.alert')?.remove();co
 function rpc(name,...args){return PortalBridge.call(name,args);}
 async function call(name,...args){try{return await rpc(name,...args);}catch(e){message(e.message,true);throw e;}}
 function loginScreen(mode){app.authMode=mode;const active=mode==='activate';const invite=app.invite||{};
- $('#root').innerHTML=`<div class="auth-wrap"><main class="auth"><div class="brand"><span class="logo">A</span><div><strong>AreWarin</strong><small>MY LEARNING / STUDENT PORTAL</small></div></div><div class="kicker">${active?'FIRST TIME ACCESS':'WELCOME BACK'}</div><h1>${active?'เปิดใช้งานบัญชี':'เข้าสู่ระบบนักเรียน'}</h1><p>${active?'กรอกรหัสนักเรียน รหัสเชิญ และตั้ง PIN 4 หลัก':'ดูตารางเรียน ชั่วโมงคงเหลือ และรายการชำระเงินได้ในที่เดียว'}</p><form class="form" id="auth-form"><label>รหัสนักเรียน<input id="login-code" required autocomplete="username" maxlength="10" placeholder="26-0001" value="${esc(invite.code||'')}"></label>${active?`<label>รหัสเชิญสำหรับเปิดใช้งานครั้งแรก<input id="activate-key" required autocomplete="off" minlength="24" value="${esc(invite.key||'')}"></label><div class="notice">ใช้ลิงก์เชิญฉบับเต็มจาก Student Portal Manager หากรหัสเชิญสั้นหรือไม่ครบ ให้ผู้ดูแลออกลิงก์ใหม่</div>`:''}<label>PIN 4 หลัก<input id="login-pin" required inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="${active?'new-password':'current-password'}" maxlength="4" placeholder="••••"></label>${active?'<label>ยืนยัน PIN<input id="login-pin2" required inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="new-password" maxlength="4" placeholder="••••"></label>':''}<button class="btn primary full" type="submit">${active?'ตั้ง PIN และเข้าใช้งาน':'เข้าสู่ระบบ'}</button></form><div class="buttons"><button class="btn ghost" type="button" id="toggle-auth">${active?'กลับหน้าเข้าสู่ระบบ':'เปิดใช้งานครั้งแรก'}</button></div><div class="notice" style="margin-top:18px">อย่าแชร์ PIN กับผู้อื่น หากลืม PIN ให้ผู้ดูแลออกลิงก์เปิดใช้งานใหม่</div></main></div>`;
- $('#toggle-auth').onclick=()=>loginScreen(active?'login':'activate');$('#auth-form').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button[type=submit]');const code=$('#login-code').value.trim().toUpperCase(),pin=$('#login-pin').value;const inviteKey=active?$('#activate-key').value.trim():'';if(active&&inviteKey.length<24){message('รหัสเชิญไม่ครบ กรุณาเปิดลิงก์เชิญเต็มจากผู้ดูแลหรือขอลิงก์ใหม่',true);$('#activate-key').focus();return;}btn.disabled=true;try{const r=active?await call('activateAccount',code,inviteKey,pin,$('#login-pin2').value):await call('loginStudent',code,pin);app.token=r.token;sessionStorage.setItem('aw_student_token',r.token);app.invite=null;await refresh();}catch(e){/* call() has already shown the server error to the student. Prevent an uncaught promise. */}finally{btn.disabled=false;}};
+ $('#root').innerHTML=`<div class="auth-wrap"><main class="auth"><div class="brand"><span class="logo">A</span><div><strong>AreWarin</strong><small>MY LEARNING / STUDENT PORTAL</small></div></div><div class="kicker">${active?'FIRST TIME ACCESS':'WELCOME BACK'}</div><h1>${active?'เปิดใช้งานบัญชี':'เข้าสู่ระบบนักเรียน'}</h1><p>${active?'กรอกรหัสนักเรียน รหัสเชิญ และตั้ง PIN 4 หลัก':'ดูตารางเรียน ชั่วโมงคงเหลือ และรายการชำระเงินได้ในที่เดียว'}</p><form class="form" id="auth-form"><label>รหัสนักเรียน<input id="login-code" required autocomplete="username" maxlength="10" placeholder="26-0001" value="${esc(invite.code||'')}"></label>${active?`<label>รหัสเชิญสำหรับเปิดใช้งานครั้งแรก<input id="activate-key" required autocomplete="off" minlength="24" value="${esc(invite.key||'')}"></label><div class="notice">ใช้ลิงก์เชิญฉบับเต็มจาก Student Portal Manager หากรหัสเชิญสั้นหรือไม่ครบ ให้ผู้ดูแลออกลิงก์ใหม่</div>`:''}<label>PIN 4 หลัก<input id="login-pin" required inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="${active?'new-password':'current-password'}" maxlength="4" placeholder="••••"></label>${active?'<label>ยืนยัน PIN<input id="login-pin2" required inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="new-password" maxlength="4" placeholder="••••"></label>':''}<div id="auth-error" class="auth-error" role="alert" hidden></div><button class="btn primary full" type="submit">${active?'ตั้ง PIN และเข้าใช้งาน':'เข้าสู่ระบบ'}</button></form><div class="buttons"><button class="btn ghost" type="button" id="toggle-auth">${active?'กลับหน้าเข้าสู่ระบบ':'เปิดใช้งานครั้งแรก'}</button></div><div class="notice" style="margin-top:18px">อย่าแชร์ PIN กับผู้อื่น หากลืม PIN ให้ผู้ดูแลออกลิงก์เปิดใช้งานใหม่</div></main></div>`;
+ $('#toggle-auth').onclick=()=>loginScreen(active?'login':'activate');
+ $('#auth-form').onsubmit=async e=>{
+  e.preventDefault();
+  const form=e.currentTarget;
+  const btn=form.querySelector('button[type=submit]');
+  const errorBox=form.querySelector('#auth-error');
+  const showError=(msg)=>{errorBox.textContent=msg;errorBox.hidden=false;};
+  errorBox.hidden=true;
+  errorBox.textContent='';
+  const code=$('#login-code').value.trim().toUpperCase();
+  const pin=$('#login-pin').value;
+  const key=active?$('#activate-key').value.trim():'';
+  if(active && key.length<24){showError('รหัสเชิญไม่ครบ กรุณาเปิดลิงก์เชิญฉบับเต็มจากผู้ดูแล');return;}
+  if(active && pin!==$('#login-pin2').value){showError('PIN ทั้งสองช่องไม่ตรงกัน');return;}
+  btn.disabled=true;
+  try{
+   // Use rpc() rather than call() so expected authentication rejection is handled here, not rethrown.
+   const result=active?await rpc('activateAccount',code,key,pin,$('#login-pin2').value):await rpc('loginStudent',code,pin);
+   if(!result||!result.token)throw Error('ไม่พบเซสชันเข้าสู่ระบบจาก API');
+   app.token=result.token;
+   sessionStorage.setItem('aw_student_token',result.token);
+   app.invite=null;
+   await refresh();
+  }catch(e){
+   const reason=String(e?.message||'ไม่สามารถดำเนินการได้');
+   const generic=reason.includes('ไม่สามารถเข้าสู่ระบบได้ กรุณาตรวจสอบรหัสหรือ PIN');
+   const hint=active
+     ? 'ตรวจว่าเปิดลิงก์เชิญล่าสุดจาก Tutor OS และยังไม่เคยตั้ง PIN ให้บัญชีนี้ รวมทั้งใช้ Google Sheets เดียวกันทั้งสองระบบ'
+     : 'ตรวจรหัสนักเรียนและ PIN หากยังไม่เคยเปิดใช้บัญชี ให้เลือก “เปิดใช้งานครั้งแรก” และใช้ลิงก์เชิญล่าสุดจากผู้ดูแล';
+   showError(generic?(active?'เปิดใช้งานบัญชีไม่สำเร็จ':'เข้าสู่ระบบไม่สำเร็จ')+'\n'+hint:reason);
+  }finally{btn.disabled=false;}
+ };
 }
 async function refresh(){if(!app.token){loginScreen(app.invite?'activate':'login');return;}try{app.data=await rpc('getMyData',app.token);render();}catch(e){app.token='';sessionStorage.removeItem('aw_student_token');message(e.message,true);loginScreen('login');}}
 async function logout(){try{if(app.token)await rpc('logoutStudent',app.token);}finally{app.token='';sessionStorage.removeItem('aw_student_token');app.data=null;loginScreen('login');}}
