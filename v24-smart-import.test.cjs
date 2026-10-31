@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');const mem=new Map(),context=vm.createContext({window:{TUTOR_CONFIG:{}},document:{readyState:'loading',addEventListener(){}},localStorage:{getItem:k=>mem.get(k)||null,setItem:(k,v)=>mem.set(k,v)},console,Math,Date,Map,Set,Number,String,JSON,Promise,crypto:globalThis.crypto,confirm:()=>true,CSS:{escape:x=>x}});vm.runInContext(src,context);const run=code=>vm.runInContext(code,context);
+run('state.data=makeDemo();store=new DemoStore();state.mode="demo";render=()=>{};hideBusy=()=>{};showBusy=()=>{}');
+const result=run(`(()=>{
+ const make=(date,file,start,end,idx)=>({filename:file,date,dateSource:'filename',dateConflict:false,fingerprint:'fingerprint-'+idx,people:[{name:'Tutor',email:'',join:start,leave:end,segments:[[minutesOf(start),minutesOf(end)]],actual:duration(start,end),studentId:'',include:false},{name:'A Biology',email:'',join:start,leave:end,segments:[[minutesOf(start),minutesOf(end)]],actual:duration(start,end),studentId:'demo-student-a',courseId:'demo-course-a',include:true,remember:false,manualMinutes:null,variants:[{name:'A Biology',email:''}],classChoice:'private'}],tutorIndex:0,sourceIndex:0,basis:'tutor',classType:'private',split:false,groupId:''});
+ state.importDrafts=[make('2026-10-10','October-10.xlsx','18:00','19:00',1),make('2026-10-17','October-17.xlsx','18:00','19:00',2)];state.importDone=['',''];state.importQueue=[{name:'October-10.xlsx'},{name:'October-17.xlsx'}];
+ state.importDrafts[0].timeOverrideStart='18:30';state.importDrafts[0].timeOverrideEnd='19:30';
+ const result=constructImportBatch([0,1]);return {dates:result.sessions.map(s=>s.date),starts:result.sessions.map(s=>s.start_time),ends:result.sessions.map(s=>s.end_time),minutes:result.attendance.map(a=>a.deduct_minutes),actual:result.attendance.map(a=>a.actual_minutes),audits:result.audit.map(a=>JSON.parse(a.details)),original:state.importDrafts[0].people[1].join};
+})()`);
+assert.deepEqual(Array.from(result.dates),['2026-10-10','2026-10-17']);assert.deepEqual(Array.from(result.starts),['18:30','18:00']);assert.deepEqual(Array.from(result.ends),['19:30','19:00']);assert.deepEqual(Array.from(result.actual),[60,60]);assert.equal(result.original,'18:00');assert(result.audits[0].editedSessionTime);assert.equal(result.audits[1].editedSessionTime,null);
+// Duplicate class interval after manually changing the second file to overlap the first must be rejected.
+run(`state.importDrafts[1].date='2026-10-10';state.importDrafts[1].timeOverrideStart='18:45';state.importDrafts[1].timeOverrideEnd='19:15';`);
+assert.throws(()=>run('constructImportBatch([0,1])'),/ซ้อน/);
+console.log('PASS v2.4 import two dated files, time correction, original meet times, audit and overlapping corrected windows');

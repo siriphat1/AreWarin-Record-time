@@ -1,13 +1,13 @@
 /**
  * AreWarin Tutor OS - Google Sheets database setup & backup.
  * Attach this script to a PRIVATE Google Spreadsheet via Extensions > Apps Script.
- * Run setupTutorOS() once, approve permissions.
+ * Run setupTutorOS_() on installation and after the v2.3 upgrade; it preserves matching older sheets and adds new ones.
  * GitHub Pages app connects directly with OAuth + Google Sheets API.
  * No API secrets or passwords in public JavaScript.
  */
 const TUTOR_SCHEMA = {
-  Students: ['id','name','email','aliases','status','created_at','notes','full_name','school','grade_level','academic_year','updated_at'],
-  Courses: ['id','student_id','title','cycle_no','start_date','purchased_minutes','status','previous_course_id','created_at','closed_at'],
+  Students: ['id','name','email','aliases','status','created_at','notes','full_name','school','grade_level','academic_year','updated_at','hourly_rate_baht'],
+  Courses: ['id','student_id','title','cycle_no','start_date','purchased_minutes','status','previous_course_id','created_at','closed_at','billing_mode','hourly_rate_baht'],
   Groups: ['id','name','member_ids','created_at'],
   Schedules: ['id','date','student_id','group_id','start_time','end_time','tutor','repeat_rule','status','notes','created_at'],
   Sessions: ['id','date','start_time','end_time','mode','group_id','tutor','time_source','status','source_file','notes','created_at'],
@@ -19,9 +19,19 @@ const TUTOR_SCHEMA = {
   GroupMemberships: ['id','group_id','student_id','joined_at','left_at','status','created_at'],
   ClassRules: ['id','scope_type','scope_id','basis','rounding_minutes','minimum_minutes','updated_at'],
   CoursePolicies: ['id','course_id','expires_on','rollover_policy','updated_at'],
-  StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at']
+  StudentEducationHistory: ['id','student_id','old_school','old_grade_level','old_academic_year','new_school','new_grade_level','new_academic_year','changed_at'],
+  Billing: ['id','attendance_id','student_id','course_id','session_id','minutes','rate_baht','amount_satang','status','paid_at','payment_method','note','created_at','updated_at'],
+  LeaveRecords: ['id','student_id','course_id','kind','start_date','end_date','expected_return','reason','status','created_at','updated_at'],
+  ScheduleExceptions: ['id','schedule_id','occurrence_date','student_id','kind','replacement_date','start_time','end_time','reason','created_at','updated_at'],
+  MakeupCredits: ['id','student_id','course_id','origin_schedule_id','origin_date','planned_minutes','scheduled_date','start_time','end_time','tutor','status','linked_attendance_id','notes','created_at','updated_at'],
+  LessonNotes: ['id','attendance_id','student_id','course_id','title','homework','follow_up','created_at','updated_at'],
+  Payments: ['id','billing_id','amount_satang','method','paid_on','note','created_at'],
+  PortalAccounts:['id','student_id','student_code','activation_hash','pin_hash','pin_salt','pin_set_at','attempts','locked_until','status','created_at','updated_at','last_login_at'],
+  PortalSessions:['id','student_id','token_hash','expires_at','revoked','created_at','updated_at'],
+  PortalRequests:['id','student_id','kind','course_id','schedule_id','attendance_id','amount_satang','slip_file_id','slip_name','date','target_date','target_time','note','status','admin_note','handled_at','approved_payment_id','created_at','updated_at'],
+  PortalNotifications:['id','student_id','title','message','read_at','created_at']
 };
-function setupTutorOS() {
+function setupTutorOS_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw Error('Open this script from the target Google Spreadsheet.');
   Object.keys(TUTOR_SCHEMA).forEach(name => {
@@ -52,15 +62,15 @@ function setupTutorOS() {
   ss.toast('AreWarin Tutor OS database is ready. Keep this file private.');
   Logger.log('Spreadsheet ID: '+ss.getId());
 }
-function backupTutorOS() {
+function backupTutorOS_() {
   const ss=SpreadsheetApp.getActiveSpreadsheet();
   const stamp=Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd_HH-mm');
   const copy=DriveApp.getFileById(ss.getId()).makeCopy('AreWarinTutorOS_backup_'+stamp);
   Logger.log('Backup created: '+copy.getUrl());
   return copy.getUrl();
 }
-function installDailyBackup() {
-  ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='backupTutorOS').forEach(t=>ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('backupTutorOS').timeBased().everyDays(1).atHour(3).create();
+function installDailyBackup_() {
+  ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='backupTutorOS_').forEach(t=>ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('backupTutorOS_').timeBased().everyDays(1).atHour(3).create();
   Logger.log('Daily backup enabled. Monitor Google Drive storage and backup retention.');
 }

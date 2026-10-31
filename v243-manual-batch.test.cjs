@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const src=fs.readFileSync(require('node:path').join(__dirname,'../assets/app.js'),'utf8');
+const ctx=vm.createContext({window:{TUTOR_CONFIG:{}},document:{readyState:'loading',addEventListener(){}},Date,Number,Math,String,Map,Set,JSON,console});
+vm.runInContext(src,ctx);const run=s=>vm.runInContext(s,ctx);
+assert.equal(run("manualClockPlus('16:00',60)"),'17:00');
+assert.equal(run("manualClockPlus('16:00',90)"),'17:30');
+assert.equal(run("manualClockPlus('16:00',120)"),'18:00');
+assert.equal(run("manualClockPlus('23:30',90)"),'01:00');
+assert.equal(run("manualClockPlus('bad',90)"),'');
+assert.equal(run("manualIntervalsOverlap({date:'2026-11-01',start:'16:00',minutes:90},{date:'2026-11-01',start:'17:00',minutes:60})"),true);
+assert.equal(run("manualIntervalsOverlap({date:'2026-11-01',start:'16:00',minutes:90},{date:'2026-11-01',start:'17:30',minutes:90})"),false);
+assert.equal(run("manualIntervalsOverlap({date:'2026-11-01',start:'23:30',minutes:90},{date:'2026-11-02',start:'00:30',minutes:60})"),true);
+assert.equal(run("manualDurationButtons().match(/data-action=\"manual-duration-preset\"/g).length"),3);
+const page=run('manual()');
+assert(page.includes('data-action="manual-add-session"'));
+assert(page.includes('manual-session-list'));
+console.log('PASS v2.4.3 optional quick-duration +1h/1.5h/2h, midnight clock rollover, overlapping bulk sessions rejected');

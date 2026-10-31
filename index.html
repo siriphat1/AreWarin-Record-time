@@ -4,31 +4,32 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#143d31">
-  <meta name="description" content="AreWarin Tutor OS v2.4.3 — Learning History deduction-only display">
-  <title>AreWarin Tutor OS v2.4.3 | Operations, Calendar & Billing</title>
+  <meta name="description" content="AreWarin Tutor OS v2.5.1 — Group form layout fix">
+  <title>AreWarin Tutor OS v2.5.1 | Operations, Calendar & Billing</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css?v=2.4.3">
+  <link rel="stylesheet" href="assets/style.css?v=2.5.1">
   <script src="config.js"></script>
   <script defer src="https://accounts.google.com/gsi/client"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script defer src="assets/app.js?v=2.4.3"></script>
+  <script defer src="assets/app.js?v=2.5.1"></script>
+  <script defer src="assets/portal-manager.js?v=1.0.0"></script>
 </head>
 <body>
   <div class="shell">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="brand-mark">A<span>·</span></span><div><strong>AreWarin</strong><small>LEARNING STUDIO · V2.4.3</small></div><button class="side-collapse" id="sidebar-collapse" aria-label="ยุบเมนูด้านข้าง" title="ยุบเมนูด้านข้าง">⇤</button></div>
+      <div class="brand"><span class="brand-mark">A<span>·</span></span><div><strong>AreWarin</strong><small>LEARNING STUDIO · V2.5.1</small></div><button class="side-collapse" id="sidebar-collapse" aria-label="ยุบเมนูด้านข้าง" title="ยุบเมนูด้านข้าง">⇤</button></div>
       <nav id="nav" class="nav-tree" aria-label="เมนูหลัก">
 <div class="nav-section">WORKSPACE</div>
 <button type="button" class="nav-item nav-home active" data-view="dashboard"><span class="nav-icon"><svg aria-hidden="true" class="aw-icon" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24" width="20"><rect height="9" rx="1.5" width="7" x="3" y="3"></rect><rect height="5" rx="1.5" width="7" x="14" y="3"></rect><rect height="9" rx="1.5" width="7" x="14" y="12"></rect><rect height="5" rx="1.5" width="7" x="3" y="16"></rect></svg></span><span class="nav-label">ภาพรวม</span></button>
 <div class="nav-section nav-section-secondary">MANAGE</div>
 <section class="nav-group" data-group="students" aria-label="นักเรียนและคอร์ส">
 <button type="button" class="nav-group-toggle" data-nav-group="students" aria-expanded="false" aria-controls="nav-sub-students" title="นักเรียนและคอร์ส"><span class="nav-icon"><svg aria-hidden="true" class="aw-icon" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24" width="20"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="nav-label">นักเรียนและคอร์ส</span><svg class="nav-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-<div class="nav-submenu" id="nav-sub-students" aria-label="เมนูย่อย นักเรียนและคอร์ส"><button type="button" class="nav-item nav-subitem" data-view="students"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">นักเรียนและคอร์ส</span></button><button type="button" class="nav-item nav-subitem" data-view="timeline"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">ไทม์ไลน์นักเรียน</span></button><button type="button" class="nav-item nav-subitem" data-view="groups"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">กลุ่มเรียน</span></button></div>
+<div class="nav-submenu" id="nav-sub-students" aria-label="เมนูย่อย นักเรียนและคอร์ส"><button type="button" class="nav-item nav-subitem" data-view="students"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">นักเรียนและคอร์ส</span></button><button type="button" class="nav-item nav-subitem" data-view="timeline"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">ไทม์ไลน์นักเรียน</span></button><button type="button" class="nav-item nav-subitem" data-view="groups"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">กลุ่มเรียน</span></button><button type="button" class="nav-item nav-subitem" data-view="portal"><span class="nav-subbullet" aria-hidden="true"></span><span class="nav-label">Student Portal Manager</span></button></div>
 </section>
 <section class="nav-group" data-group="classes" aria-label="ตารางและการสอน">
 <button type="button" class="nav-group-toggle" data-nav-group="classes" aria-expanded="false" aria-controls="nav-sub-classes" title="ตารางและการสอน"><span class="nav-icon"><svg aria-hidden="true" class="aw-icon" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24" width="20"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h3M8 17h6"></path></svg></span><span class="nav-label">ตารางและการสอน</span><svg class="nav-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>

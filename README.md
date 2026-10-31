@@ -1,66 +1,39 @@
-# AreWarin Tutor OS v2.4 — Tutor Operations & Finance Pro
+# Portal v1.0.1 / Tutor OS v2.5.1 UI patch
 
-ระบบเว็บไซต์ GitHub Pages (HTML/CSS/JavaScript) เชื่อม Google Sheets API ด้วย Google OAuth สำหรับดูแลนักเรียน กลุ่ม คอร์สแพ็กเกจ/รายชั่วโมง ตารางเรียน บันทึกชั่วโมง ลาหยุด/ชดเชย การเงิน และรายงานผู้ปกครอง
+The Tutor OS **Create/Edit Group** member picker is now responsive and searchable, with correctly sized checkboxes. Student Portal authentication, payment, hours, and existing group membership logic are unchanged. See `CHANGELOG-group-form-v1.0.1.md`.
 
-## 5 ฟีเจอร์ใหม่ใน v2.4
+# AreWarin Student Portal v1.0 + Tutor OS v2.5.0 integration
 
-1. **Smart Import Pro** — นำเข้าไฟล์ Google Meet Excel หลายไฟล์; แก้วันที่ *และช่วงเวลาคาบ* ต่อไฟล์ได้จาก Imported Class Summary; จับคู่ชื่อ Meet/คอร์ส; ตรวจไฟล์ซ้ำ ชื่อซ้ำ เวลาเรียนทับซ้อน และการเข้าร่วมหลายช่วง ก่อน Final Review (ข้อมูลเวลาเข้าร่วมจริงใน Excel ไม่ถูกเปลี่ยนเมื่อแก้เวลาคาบ)
-2. **Class Reconciliation** — หมวด **ตารางและการสอน → ตรวจคาบที่ตกหล่น**: เลือกเดือน/นักเรียน; เทียบ Schedules รายสัปดาห์/รายครั้งกับ Attendance; แยกคาบที่บันทึกแล้ว ยังไม่บันทึก เลื่อน/ลาหยุด และคาบอนาคต; เปิดหน้าลงเวลา/ประวัติได้จากผลตรวจ; *ไม่มีการตัดชั่วโมงอัตโนมัติ*
-3. **Finance Pro** — หมวด **การเงินและรายงาน → การเงินและใบรับเงิน**: เลือกเดือน; รายงานยอดเงินที่รับจริงจาก Payments, ยอดค่าคาบ และยอดค้างของคาบเดือนนั้น; CSV; ออกใบรับเงินราย **ครั้งที่รับเงินจริง** เป็น PDF (อาจใช้เมนูพิมพ์ Save as PDF หากโหลดไลบรารีไม่ได้) โดยไม่เข้าใจผิดว่าเงินงวดแรกเป็นเงินเต็มจำนวน
-4. **Student Timeline** — หมวด **นักเรียนและคอร์ส → ไทม์ไลน์นักเรียน** หรือปุ่มใน Student Profile: รวมคอร์สและการต่อรอบ ประวัติคาบ ลา/พักเรียน เรียนชดเชย และรายการรับชำระของนักเรียนรายคน
-5. **System Reliability** — หมวด **ติดตามและดูแลระบบ → ตรวจสอบ/สำรองข้อมูล**: เพิ่มการตรวจค่าคาบ/Payments และความสัมพันธ์ Attendance/Session/Course/Ledger; ดาวน์โหลด Audit CSV; อ่าน/ตรวจไฟล์ Backup JSON เพื่อดูรายการชีตก่อนกู้คืน (Read Only); ยังคงระบบสำรอง Google Drive ใน Apps Script และการกู้คืนแบบ Demo-only ตามเดิม
+A private-by-default student view, **hosted inside Google Apps Script HTML Service**, with a compact Student ID, invitation + PIN setup, schedules, approved learning hours, courses, hourly fees, PromptPay QR, payment slip submissions to a restricted Google Drive folder, course/leave/makeup requests, and an administrator approval inbox integrated into Tutor OS.
 
-## การอัปเกรดจาก v2.3.2
+**Not live yet.** This is installable source code. Deployment, Google permissions, real bank QR verification, and real Sheets/Drive acceptance tests must be completed by the owner.
 
-1. **สำรอง Google Sheets** และโฟลเดอร์เว็บไซต์เดิมก่อน
-2. นำไฟล์ `index.html`, `assets/app.js`, `assets/style.css` จาก ZIP ไปแทนไฟล์เดิมบน GitHub Pages
-3. **เก็บ `config.js` เดิม** ซึ่งมี Google Client ID / Spreadsheet ID ของระบบที่ใช้งาน (อย่าเผลอแทนด้วย config.js ตัวอย่างที่เป็นค่าว่าง)
-4. เปิดเว็บไซต์และรีเฟรชแบบไม่ใช้แคช (`Ctrl + Shift + R`)
-5. ลองเพิ่มนักเรียน/บันทึกชั่วโมง/รับชำระด้วย **สำเนา** Google Sheets ก่อนใช้กับข้อมูลจริง
+## Package layout
 
-**v2.4 ไม่เพิ่มคอลัมน์หรือชีตใหม่จาก v2.3.2** จึงไม่ต้องรัน `setupTutorOS()` ซ้ำเมื่อฐานข้อมูล v2.3.2 ปกติอยู่แล้ว หากติดตั้งครั้งแรกให้ใช้ `apps-script/Setup.gs` และรัน `setupTutorOS()` บนสเปรดชีตส่วนตัว
+- `tutor-os/` — modified Tutor OS v2.4.3, labeled v2.5.0 integration, with `assets/portal-manager.js`, `Portal Manager` submenu, account generation on new student creation, and four extra Sheets in `Setup.gs`.
+- `student-portal/apps-script/StudentPortal.gs` — secure web-app back end.
+- `student-portal/apps-script/Student.html` — responsive student interface (Google Apps Script HTML Service, **not** standalone GitHub Pages).
+- `tests/portal-server.test.cjs` — server logic tests with mocked Google APIs.
+- `tests/student-client.js` — extracted JavaScript syntax check.
+- `docs/INSTALLATION.md` — exact installation steps.
+- `docs/SECURITY.md` — security limits and prelaunch checklist.
 
-## การติดตั้งครั้งแรก
+## Important functionality
 
-- ใช้ Google Spreadsheet แบบส่วนตัว ไม่เปิด Public Link
-- เปิด Extensions → Apps Script วางเนื้อหา `apps-script/Setup.gs` และรัน `setupTutorOS()`
-- ตั้งค่า Authorized JavaScript origins ของ Google OAuth Client ID ให้ตรง URL GitHub Pages ที่เปิดใช้งาน
-- กำหนด `googleClientId` และ `spreadsheetId` ใน `config.js` **เฉพาะค่า ID ที่ไม่ใช่ความลับ** ห้ามเก็บ Client Secret, Access Token หรือรหัสผ่านไว้ใน GitHub
-- เปิดเว็บไซต์และเชื่อมบัญชี Google ที่มีสิทธิ์เข้าถึง Spreadsheet
+- **Student ID:** e.g. `26-1234`; generated when adding a NEW student in the updated Tutor OS. Existing students can receive IDs from Portal Manager. The ID itself is not a password.
+- **First-time activation:** unique, high-entropy invitation link shown to the admin once. PIN is set on the Apps Script server, never stored as plaintext. Five failed PIN attempts lock the account for 30 minutes. Tokens last 24 hours.
+- **Student view only:** filters all private data on the server using authenticated student_id. Includes *approved* Attendance, final deducted duration, course purchases/usage/balance, schedule, hourly billing, requests, makeups and selected LessonNotes. **No Audit, editor identity, original Meet files, or editing events are included.**
+- **Request + approval:** leave, pause, makeup preferences, renew, new course, attendance review, optional class confirmation and payment submission go through a request queue. Approval happens in the existing Tutor OS Portal Manager, protected by the admin's existing Google Sheets OAuth.
+- **Payments:** displays individual unpaid hourly bills and amount-aware Thai PromptPay EMV QR (PromptPay national ID `1901001151577`; bank account alternative `664-343-6974`, Krungthai). Slip upload goes into the specified private Google Drive folder. Upload alone **never marks a bill as paid**. Admin must verify actual bank receipt before approval. QR rendering requires the external `qrcodejs` CDN; fallback displays account data if unavailable.
+- **Admin request approval:** approving a payment creates exactly one `Payments` row and updates Billing to paid only after fully settled; approving leave/pause creates a corresponding `LeaveRecords` entry; course/makeup/attendance-review approvals denote admin acceptance of request only and **require the relevant existing Tutor OS action** (renew course, schedule makeup, adjust attendance) separately.
 
-## หมายเหตุสำคัญเกี่ยวกับข้อมูล
+## Known limits
 
-- `Sessions.date` เป็นวันเรียนของคาบนั้น, `Attendance` เชื่อมด้วย `session_id`, `Imports.date` เก็บวันที่แยกแต่ละไฟล์
-- การแก้เวลาคาบใน Smart Import เปลี่ยนช่วงเวลาใน Session และปรับเวลาที่เสนอหักตามกฎ **Tutor time**; `person.join`, `person.leave`, `actual_minutes` จาก Google Meet ยังคงเดิม และรายการแก้เวลาแสดงใน Audit เมื่อนำเข้าเสร็จ
-- ตรวจรายการซ้ำระหว่างหลายไฟล์ ทั้งวันที่และช่วงเวลาที่ปรับใหม่ ก่อนอนุมัติ
-- การรับชำระบางส่วนบันทึกเป็นรายการใน `Payments` แยกแต่ละครั้ง ใบรับเงินอ้างอิง **Payment ID** และยอดที่ได้รับครั้งนั้นเท่านั้น
-- **Finance Pro ปัจจุบันนับเฉพาะรายรับที่บันทึกใน Payments ของคอร์สรายชั่วโมง** ไม่รวมเงินค่าแพ็กเกจ/การรับเงินเก่าที่ไม่ได้บันทึกใน Payments และไม่ได้คำนวณกำไรหรือหักภาษี
-- การคืนเงินที่บันทึกแค่สถานะยังไม่แสดงเป็นรายการเงินสดออกในรายงานรายรับ ควรตรวจยอดคืนจริงแยกก่อนนำไปใช้ทำบัญชี
-- Class Reconciliation เป็นการเทียบข้อมูลตามวันและช่วงเวลาที่ทับซ้อนกัน ไม่ใช่ข้อสรุปยืนยันว่ามีการเรียนจริงหรือไม่; สมาชิกกลุ่มที่เปลี่ยนภายหลังอาจต้องตรวจเป็นพิเศษ
-- Browser-side integrity checks **ไม่รับประกันการป้องกันการเขียนพร้อมกันจากหลายอุปกรณ์** และไม่ใช่ server-side transaction lock ควรหลีกเลี่ยงการแก้ฐานข้อมูลชุดเดียวกันจากหลายเครื่องในเวลาเดียวกัน
-- กู้คืนข้อมูลจริงด้วยการตรวจไฟล์สำรอง Google Sheets/Drive ในสำเนาและเปลี่ยน Spreadsheet ID ตามขั้นตอนโดยผู้ดูแล **ไม่มีกู้คืนทับข้อมูลจริงจากหน้าเว็บโดยตรง**
-- ใบรับเงินเป็นหลักฐานการรับชำระทั่วไป **ไม่ใช่ใบกำกับภาษี**
+- No parent-specific login; initial release is students only. Parent roles need separately scoped authorization.
+- No independent bank transfer verification; all payments need human approval after comparing real incoming transactions.
+- No SMS/email alerts or automatic course creation on request approval.
+- No automatic Google Calendar two-way synchronization.
+- Apps Script/Sheets is not a strong transactional database for concurrent admins; if throughput grows, move auth and approvals to a transactional database/backend with proper idempotency.
+- PIN length 4 offers limited security; treat account activation, rate limiting and limited access scope seriously. Portal session token lives in `sessionStorage` and expires in 24 hours.
 
-## โครงสร้างไฟล์
-
-- `index.html` — หน้าหลักและเมนูแบบยุบขยาย
-- `assets/app.js` — ตรรกะข้อมูล/หน้าเว็บและฟีเจอร์
-- `assets/style.css` — Botanical Minimal Pro UI
-- `config.js` — ไฟล์ตั้งค่าตัวอย่าง (ค่าว่าง)
-- `apps-script/Setup.gs` — ตั้งค่า Google Sheets / สำรอง Google Drive
-- `tests/` — JavaScript tests และ Chromium browser tests
-- `samples/` — ไฟล์ตัวอย่าง Google Meet
-- `sample-payment-receipt.pdf` — ตัวอย่างรูปแบบใบรับเงิน **ข้อมูลสมมติเท่านั้น**
-- `CHANGELOG-v2.4.md`, `TESTING.md` — รายละเอียดการเปลี่ยนแปลงและผลการทดสอบ
-
-## ทดสอบในเครื่อง
-
-```bash
-node --check assets/app.js
-for f in tests/*.test.cjs; do node "$f"; done
-python tests/v24-browser.test.py
-python tests/v23-browser.test.py
-python tests/v18-browser.test.py
-```
-
-การเรียกใช้แบบไฟล์ `file://` อาจถูกจำกัดโดยเบราว์เซอร์ ควรทดสอบผ่าน localhost/HTTPS ในการใช้งานจริง
+See `docs/INSTALLATION.md` before use. Do **not** copy personal student records into the public GitHub repository.

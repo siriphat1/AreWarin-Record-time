@@ -1,0 +1,25 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');const memory=new Map();
+const context=vm.createContext({window:{TUTOR_CONFIG:{}},document:{readyState:'loading',addEventListener(){}},localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},FormData:class{constructor(f){this.f=f;}get(k){return this.f[k]??'';}},CSS:{escape:x=>x},crypto:globalThis.crypto,console,Date,Math,Map,Set,Number,String,JSON,Promise,confirm:()=>true});
+vm.runInContext(source,context);const run=txt=>vm.runInContext(txt,context);
+run('render=()=>{};closeModal=()=>{};toast=()=>{};showBusy=()=>{};hideBusy=()=>{};store=new DemoStore();state.data=makeDemo();state.mode="demo"');
+const month='2026-10',sc=`{id:'reconcile-a',date:'2026-10-01',student_id:'demo-student-a',group_id:'',start_time:'18:00',end_time:'20:00',tutor:'Tutor',repeat_rule:'weekly',status:'active',notes:'',created_at:now()}`;
+run('state.data.Schedules=['+sc+'];state.data.Sessions.push({id:"reconcile-s",date:"2026-10-01",start_time:"18:00",end_time:"20:00",status:"approved",created_at:now()});state.data.Attendance.push({id:"reconcile-att",session_id:"reconcile-s",student_id:"demo-student-a",course_id:"demo-course-a",status:"approved",deduct_minutes:120,actual_minutes:120});');
+const r=run('reconciliationRows("2026-10","demo-student-a")');assert(r.some(x=>x.day==='2026-10-01'&&x.status==='recorded'));
+assert(r.some(x=>x.day==='2026-10-08'&&x.status==='missing'));
+run(`state.data.LeaveRecords.push({id:'rec-leave',student_id:'demo-student-a',course_id:'',kind:'pause',start_date:'2026-10-08',end_date:'2026-10-08',expected_return:'2026-10-09',status:'active'});`);
+assert.equal(run('reconciliationRows("2026-10","demo-student-a").filter(r=>r.day==="2026-10-08"&&r.status==="missing").length'),0);
+assert(run('reconciliationPage().includes("Class Reconciliation")'));
+run(`state.data.Courses.push({id:'v24-hourly',student_id:'demo-student-b',title:'พิเศษ',cycle_no:1,status:'active',billing_mode:'hourly',hourly_rate_baht:500});state.data.Sessions.push({id:'v24-ss',date:'2026-10-05',start_time:'18:00',end_time:'19:30',status:'approved'});state.data.Attendance.push({id:'v24-aa',session_id:'v24-ss',student_id:'demo-student-b',course_id:'v24-hourly',status:'approved',deduct_minutes:90,actual_minutes:90});state.data.Billing.push(hourlyInvoice(byId('Attendance','v24-aa'),byId('Courses','v24-hourly')));`);
+const billid=run("all('Billing')[0].id");run(`state.data.Payments.push({id:'v24-pay-1',billing_id:'${billid}',amount_satang:25000,method:'transfer',paid_on:'2026-10-05',note:'งวดแรก',created_at:now()});state.data.Billing[0].status='partial';`);
+assert.equal(run('financeMonthSummary("2026-10").collected'),25000);
+assert(run('receiptHtml(byId("Payments","v24-pay-1")).includes("250.00")'));
+assert(run('financeProPage().includes("Finance Pro")'));
+assert(run('studentTimelineRows("demo-student-b").some(x=>x.type==="payment")'));
+assert(run('studentTimelinePage().includes("Student Timeline")'));
+assert.equal(run('reliabilityIssues().length'),0);
+run("state.data.Payments[0].amount_satang=90000");assert(run('reliabilityIssues().length')>=1);
+// A manually corrected class time affects the session/tutor basis, not the raw Meet time.
+run(`state.importDraft={people:[{name:'tutor',segments:[[1080,1200]],actual:120,join:'18:00',leave:'20:00'},{name:'student',segments:[[1080,1140]],actual:60,join:'18:00',leave:'19:00'}],tutorIndex:0,basis:'tutor'};state.importDraft.timeOverrideStart='18:30';state.importDraft.timeOverrideEnd='19:30';`);
+assert.equal(run('reportClock(state.importDraft).minutes'),60);assert.equal(run('calculatedImport(state.importDraft,state.importDraft.people[1])'),60);assert.equal(run('state.importDraft.people[1].actual'),60);
+console.log('PASS v2.4 class reconciliation, leave exception, finance receipts, student timeline, reliability checks, import time override');
