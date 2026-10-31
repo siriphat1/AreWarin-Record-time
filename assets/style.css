@@ -898,3 +898,26 @@ body.theme-dark .edit-att-result small{color:#a9c7b3}
 body.theme-dark .edit-att-comparison>div{background:#23382b;border-color:#41634b}
 body.theme-dark .edit-att-comparison small{color:#b0cdb7}
 body.theme-dark .edit-att-comparison strong{color:#e0f5e7}
+
+/* v2.4.3 — Learning History: 3 clear metrics, no duplicate teaching-duration KPI */
+.history-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:690px){.history-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.history-metrics>div:last-child{grid-column:1/-1}}
+
+/* v2.4.3 — Multiple manual sessions + optional quick-duration templates */
+.manual-session-list{display:grid;gap:14px;min-width:0}
+.manual-session-row{border:1px solid #d5e4d8;border-radius:18px;padding:20px;background:linear-gradient(145deg,#fcfefd,#f7faf7);min-width:0}
+.manual-session-title,.manual-batch-footer{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.manual-session-title{margin-bottom:13px;color:#184d3a}.manual-session-title>span{font-size:.84rem;color:#688071}
+.manual-session-row .grid-3{min-width:0}.manual-session-row .field{min-width:0}.manual-session-row input{min-width:0;max-width:100%}
+.manual-presets{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:15px 0 12px}
+.manual-presets>span{font-size:.84rem;font-weight:650;color:#577465;margin-right:3px}
+.manual-preset{background:#fff;border:1px solid #cbded1;padding:9px 15px;border-radius:11px;cursor:pointer;color:#225c42;font:inherit;font-weight:700;transition:background .15s,border-color .15s}
+.manual-preset:hover,.manual-preset.is-active{background:#dfeee4;border-color:#387758;color:#164a36}
+.manual-preset:focus-visible{outline:3px solid #76b896;outline-offset:2px}
+.manual-session-duration{border:1px solid #cde4d3;border-radius:12px;padding:12px 16px;background:#ebf6ed;display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:#325c43}
+.manual-session-duration strong{font-size:1.15rem;color:#174d3c}
+.manual-batch-footer{margin:5px 0 0}.manual-batch-footer>span{font-size:.9rem;color:#63796c}
+@media(max-width:680px){.manual-session-row{padding:14px}.manual-presets{gap:7px}.manual-preset{padding:8px 11px}}
+.theme-dark .manual-session-row{background:#1a3329;color:#e5f3e8;border-color:#365746}
+.theme-dark .manual-session-duration,.theme-dark .manual-preset{background:#264535;color:#eff8ed;border-color:#527362}
+.theme-dark .manual-preset.is-active{background:#315f47}
