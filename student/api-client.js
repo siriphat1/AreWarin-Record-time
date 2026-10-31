@@ -20,11 +20,21 @@ const PortalBridge = (()=>{
   if(body.length>6*1024*1024)throw Error('ข้อมูลหรือสลิปเกินขนาดที่ระบบรองรับ');
   const controller=new AbortController();const tid=setTimeout(()=>controller.abort(),45000);
   try{
-   const res=await fetch(url.href,{method:'POST',mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',headers:{'Content-Type':'application/json'},body,signal:controller.signal});
-   let out;try{out=await res.json();}catch{throw Error('API ส่งข้อมูลตอบกลับไม่ถูกต้อง ตรวจการ Deploy Apps Script');}
-   if(!res.ok||!out?.ok)throw Error(String(out?.error||'ไม่สามารถดำเนินการได้'));
-   setStatus('พร้อมใช้งาน',false);return out.result;
-  }catch(e){setStatus('เกิดปัญหาเชื่อมต่อ API',true);throw e;}
+   let res;
+   try{
+    res=await fetch(url.href,{method:'POST',mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',headers:{'Content-Type':'application/json'},body,signal:controller.signal});
+   }catch(e){
+    setStatus('เชื่อมต่อ API ไม่สำเร็จ',true);
+    throw Error(e?.name==='AbortError'?'การเชื่อมต่อหมดเวลา กรุณาลองใหม่':'เชื่อมต่อ API ไม่สำเร็จ ตรวจ Worker URL และเครือข่าย');
+   }
+   let out;
+   try{out=await res.json();}catch{setStatus('API ตอบกลับผิดรูปแบบ',true);throw Error('API ส่งข้อมูลตอบกลับไม่ถูกต้อง ตรวจการ Deploy Apps Script');}
+   if(!res.ok){setStatus('API ตอบกลับผิดพลาด',true);throw Error(String(out?.error||'เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+res.status+')'));}
+   // A rejected student code/invite/PIN is an AUTH error, NOT an API outage.
+   setStatus('พร้อมใช้งาน',false);
+   if(!out?.ok)throw Error(String(out?.error||'ไม่สามารถดำเนินการได้'));
+   return out.result;
+  }catch(e){throw e;}
   finally{clearTimeout(tid);}
  }};
 })();
