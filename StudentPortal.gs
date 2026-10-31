@@ -1,9 +1,11 @@
 /**
- * AreWarin Student Portal v1.0 — bound Google Apps Script; SAME PRIVATE spreadsheet as Tutor OS.
- * Deploy as HTML-service Web App: Execute as ME, access ANYONE (with link).
+ * AreWarin Student Portal GitHub v1.1 — NEW STANDALONE Apps Script project.
+ * This project is NOT the existing bound Code.gs. It accesses the same private Spreadsheet by ID.
+ * Deploy as ContentService JSON Web App behind a Cloudflare Worker: Execute as ME, access ANYONE (with link).
  * Public-facing functions MUST authenticate by a server-side session; all helper functions end in _.
  * Never disclose audit logs, source join/leave times, edit history, or other students' data.
  */
+var PORTAL_SPREADSHEET_ID = 'PASTE_SPREADSHEET_ID_HERE';
 var PORTAL_HEADERS = {
   PortalAccounts:['id','student_id','student_code','activation_hash','pin_hash','pin_salt','pin_set_at','attempts','locked_until','status','created_at','updated_at','last_login_at'],
   PortalSessions:['id','student_id','token_hash','expires_at','revoked','created_at','updated_at'],
@@ -15,13 +17,25 @@ var PORTAL_TZ = 'Asia/Bangkok';
 var PORTAL_BANK = {recipientName:'กวดวิชาชีววิทยา อาวริน', promptpayId:'1901001151577', bank:'กรุงไทย', bankAccount:'664-343-6974'};
 
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Student').setTitle('AreWarin | My Learning')
-    .addMetaTag('viewport','width=device-width, initial-scale=1, viewport-fit=cover');
+  return ContentService.createTextOutput('AreWarin Student API online; use the authorized Student Portal website.').setMimeType(ContentService.MimeType.TEXT);
+}
+function doPost(e) {
+  try {
+    var body=String(e&&e.postData&&e.postData.contents||'');
+    if(body.length>6*1024*1024)throw Error('Request too large');
+    var input=JSON.parse(body);
+    if(!input||typeof input!=='object'||!Array.isArray(input.args)||input.args.length>5)throw Error('Bad request');
+    var name=String(input.method||'');
+    // Exact allowlist: never expose helper or admin methods from this public Web App.
+    var permitted={appConfig:1,activateAccount:1,requestPhoneOtp:1,activateWithPhone:1,loginStudent:1,logoutStudent:1,getMyData:1,submitPortalRequest:1,submitPaymentSlip:1};
+    if(!permitted[name])throw Error('Method not allowed');
+    var fn={appConfig:appConfig,activateAccount:activateAccount,requestPhoneOtp:requestPhoneOtp,activateWithPhone:activateWithPhone,loginStudent:loginStudent,logoutStudent:logoutStudent,getMyData:getMyData,submitPortalRequest:submitPortalRequest,submitPaymentSlip:submitPaymentSlip}[name];
+    return ContentService.createTextOutput(JSON.stringify({ok:true,result:fn.apply(null,input.args)})).setMimeType(ContentService.MimeType.JSON);
+  }catch(err){return ContentService.createTextOutput(JSON.stringify({ok:false,error:String(err&&err.message||err).slice(0,220)})).setMimeType(ContentService.MimeType.JSON);}
 }
 function setupStudentPortal_() {
   // MUST be run from Apps Script editor by the spreadsheet owner; not exposed as a web UI.
-  var ss=SpreadsheetApp.getActiveSpreadsheet();
-  if(!ss)throw Error('Bind Apps Script to the Tutor OS Spreadsheet first.');
+  var ss=portalSpreadsheet_();
   Object.keys(PORTAL_HEADERS).forEach(function(name){
     var sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);
     var headers=PORTAL_HEADERS[name];var actual=sh.getLastRow()?sh.getRange(1,1,1,headers.length).getDisplayValues()[0]:[];
@@ -29,12 +43,24 @@ function setupStudentPortal_() {
       if(headers.some(function(x,i){return x!==actual[i];}))throw Error('Unexpected header in '+name+' — do not overwrite existing data');
     }else{sh.getRange(1,1,1,headers.length).setValues([headers]).setBackground('#174D3C').setFontColor('#FFFFFF').setFontWeight('bold');sh.setFrozenRows(1);}
   });
+  // v1.2: Add a phone column to the existing Students sheet without replacing any data.
+  var studentSheet=ss.getSheetByName('Students');
+  if(!studentSheet)throw Error('Missing Students sheet — verify Spreadsheet ID');
+  var studentColumns=studentSheet.getRange(1,1,1,studentSheet.getLastColumn()).getDisplayValues()[0];
+  if(studentColumns.indexOf('phone')<0){
+    var newCol=studentColumns.length+1;
+    studentSheet.getRange(1,newCol).setValue('phone').setBackground('#174D3C').setFontColor('#FFFFFF').setFontWeight('bold');
+    studentSheet.getRange(2,newCol,Math.max(1,studentSheet.getMaxRows()-1)).setNumberFormat('@');
+  }
   var props=PropertiesService.getScriptProperties();
   if(!props.getProperty('PORTAL_PEPPER'))props.setProperty('PORTAL_PEPPER',randomToken_(4));
   Logger.log('Portal sheets ready. DO NOT publish the spreadsheet.');
 }
+// Public wrapper visible in the Apps Script function picker (editor only, not in doPost allowlist).
+function setupStudentPortal(){setupStudentPortal_();}
 function appConfig(){return {name:'AreWarin Student Portal',recipientName:PORTAL_BANK.recipientName,promptpayId:PORTAL_BANK.promptpayId,bank:PORTAL_BANK.bank,bankAccount:PORTAL_BANK.bankAccount};}
-function sheet_(name){var sh=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);if(!sh)throw Error('Missing sheet '+name+'; run setupStudentPortal_ from Apps Script editor');return sh;}
+function portalSpreadsheet_(){if(!PORTAL_SPREADSHEET_ID||PORTAL_SPREADSHEET_ID==='PASTE_SPREADSHEET_ID_HERE')throw Error('Set PORTAL_SPREADSHEET_ID first');return SpreadsheetApp.openById(PORTAL_SPREADSHEET_ID);}
+function sheet_(name){var sh=portalSpreadsheet_().getSheetByName(name);if(!sh)throw Error('Missing sheet '+name+'; run setupStudentPortal_ from Apps Script editor');return sh;}
 function records_(name){var sh=sheet_(name),n=sh.getLastRow();if(n<2)return [];var headers=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];
  return sh.getRange(2,1,n-1,headers.length).getDisplayValues().map(function(a,i){var obj={_row:i+2};headers.forEach(function(h,j){obj[h]=String(a[j]||'');});return obj;}).filter(function(x){return x.id;});}
 function append_(name,obj){var sh=sheet_(name),headers=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];sh.appendRow(headers.map(function(h){var value=obj[h]===undefined?'':obj[h];if(typeof value==='string'&&/^[\s]*[=+\-@]/.test(value))return '\''+value;return value;}));}
@@ -54,6 +80,76 @@ function requireSession_(token){if(!token||typeof token!=='string'||token.length
 }
 function lockLogin_(account){var attempts=(Number(account.attempts)||0)+1;var until=attempts>=5?new Date(Date.now()+30*60*1000).toISOString():'';patch_('PortalAccounts',account,{attempts:attempts,locked_until:until,updated_at:now_()});}
 function checkLock_(account){if(account.locked_until&&Date.parse(account.locked_until)>Date.now())throw Error('ลองรหัสหลายครั้งเกินไป กรุณารอ 30 นาทีหรือติดต่อผู้ดูแล');}
+/** Phone activation uses SMS OTP via Twilio Verify, never phone number matching alone. */
+function thaiMobile_(value){
+ var n=String(value||'').replace(/[\s()-]/g,'');
+ if(/^0[689][0-9]{8}$/.test(n))return '+66'+n.slice(1);
+ if(/^\+66[689][0-9]{8}$/.test(n))return n;
+ if(/^66[689][0-9]{8}$/.test(n))return '+'+n;
+ throw Error('กรุณากรอกเบอร์มือถือไทย 10 หลัก เช่น 08xxxxxxxx');
+}
+function twilioSettings_(){
+ var p=PropertiesService.getScriptProperties();
+ var sid=p.getProperty('TWILIO_ACCOUNT_SID'),token=p.getProperty('TWILIO_AUTH_TOKEN'),service=p.getProperty('TWILIO_VERIFY_SERVICE_SID');
+ if(!sid||!token||!service)throw Error('ยังไม่ได้ตั้งค่าระบบ SMS OTP กรุณาแจ้งผู้ดูแลตั้งค่า Twilio Verify');
+ if(!/^AC[a-fA-F0-9]{32}$/.test(sid)||!/^VA[a-fA-F0-9]{32}$/.test(service))throw Error('การตั้งค่า Twilio Verify ไม่ถูกต้อง');
+ return {sid:sid,token:token,service:service};
+}
+function twilioVerify_(endpoint,data){
+ var cfg=twilioSettings_();
+ var url='https://verify.twilio.com/v2/Services/'+cfg.service+'/'+endpoint;
+ var response=UrlFetchApp.fetch(url,{
+   method:'post',contentType:'application/x-www-form-urlencoded',
+   headers:{Authorization:'Basic '+Utilities.base64Encode(cfg.sid+':'+cfg.token)},
+   payload:data,muteHttpExceptions:true
+ });
+ var status=response.getResponseCode(),payload={};
+ try{payload=JSON.parse(response.getContentText());}catch(e){}
+ if(status<200||status>=300)throw Error('ระบบส่ง/ตรวจ OTP ไม่สำเร็จ กรุณาลองใหม่หรือติดต่อผู้ดูแล');
+ return payload;
+}
+function checkPhone_(account,entered){
+ var student=records_('Students').filter(function(x){return x.id===account.student_id&&x.status!=='deleted';})[0];
+ if(!student||!student.phone)throw Error('ยังไม่มีเบอร์โทรนักเรียนในระบบ กรุณาให้ผู้ดูแลเพิ่มเบอร์ใน Tutor OS');
+ if(thaiMobile_(student.phone)!==thaiMobile_(entered))authError_();
+ return thaiMobile_(student.phone);
+}
+function otpLimit_(code){
+ var props=PropertiesService.getScriptProperties(),key='OTP_'+hash_(String(code)).slice(0,22),now=Date.now();
+ var old;try{old=JSON.parse(props.getProperty(key)||'{}');}catch(e){old={};}
+ if(now-Number(old.last||0)<75000)throw Error('กรุณารออย่างน้อย 75 วินาทีก่อนขอ OTP ใหม่');
+ var start=(now-Number(old.start||0)<3600000)?Number(old.start):now;
+ var count=start===Number(old.start)?Number(old.count||0):0;
+ if(count>=4)throw Error('ขอ OTP เกินจำนวนครั้ง กรุณารอ 1 ชั่วโมงหรือติดต่อผู้ดูแล');
+ props.setProperty(key,JSON.stringify({start:start,count:count+1,last:now}));
+}
+function requestPhoneOtp(code,phone){
+ var normalized=thaiMobile_(phone);var lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+   var a=codeAccount_(code);
+   if(!a||a.pin_hash)authError_();checkLock_(a);
+   checkPhone_(a,normalized);
+   otpLimit_(a.student_code);
+   var sent=twilioVerify_('Verifications',{To:normalized,Channel:'sms'});
+   if(sent.status!=='pending')throw Error('ส่ง SMS OTP ไม่สำเร็จ กรุณาลองใหม่');
+   return {sent:true,phoneHint:'•••'+normalized.slice(-4)};
+ }finally{lock.releaseLock();}
+}
+function activateWithPhone(code,phone,otp,pin,confirmPin){
+ if(!/^\d{4}$/.test(String(pin))||String(pin)!==String(confirmPin))throw Error('กรุณาตั้ง PIN ตัวเลข 4 หลักและยืนยันให้ตรงกัน');
+ if(!/^\d{4,10}$/.test(String(otp)))throw Error('กรุณากรอกรหัส OTP จาก SMS');
+ var normalized=thaiMobile_(phone),lock=LockService.getScriptLock();lock.waitLock(20000);
+ try{
+  var a=codeAccount_(code);if(!a||a.pin_hash)authError_();checkLock_(a);
+  checkPhone_(a,normalized);
+  var checked=twilioVerify_('VerificationCheck',{To:normalized,Code:String(otp)});
+  if(checked.status!=='approved'){lockLogin_(a);throw Error('OTP ไม่ถูกต้องหรือหมดอายุ กรุณาตรวจสอบ SMS');}
+  var salt=randomToken_(1);
+  patch_('PortalAccounts',a,{pin_hash:pinHash_(pin,salt),pin_salt:salt,pin_set_at:now_(),activation_hash:'',attempts:0,locked_until:'',updated_at:now_()});
+  return issueSession_(a.student_id);
+ }finally{lock.releaseLock();}
+}
+// Keep legacy activation for previously issued links, but the new GitHub UI no longer asks for invitations.
 function activateAccount(code,activationKey,pin,confirmPin){
  if(!/^\d{4}$/.test(String(pin))||pin!==confirmPin)throw Error('ตั้ง PIN ตัวเลข 4 หลักและยืนยันให้ตรงกัน');
  var lock=LockService.getScriptLock();lock.waitLock(20000);try{
