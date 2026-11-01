@@ -5,7 +5,7 @@ const PortalBridge = (()=>{
  const endpoint = String(window.STUDENT_CONFIG?.apiEndpoint||'').trim();
  const allowed = new Set(['appConfig','registerPhonePin','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip']);
  const status=()=>document.getElementById('connection-status');
- const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);};
+ const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);el.classList.toggle('connected',!isError&&value==='พร้อมใช้งาน');};
  let url;
  try{url=new URL(endpoint);}catch{}
  if(!url || url.protocol!=='https:' || !/^[a-zA-Z0-9.-]+$/.test(url.hostname)){
