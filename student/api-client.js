@@ -3,7 +3,7 @@
 'use strict';
 const PortalBridge = (()=>{
  const endpoint = String(window.STUDENT_CONFIG?.apiEndpoint||'').trim();
- const allowed = new Set(['appConfig','activateAccount','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip']);
+ const allowed = new Set(['appConfig','registerPhonePin','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip']);
  const status=()=>document.getElementById('connection-status');
  const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);};
  let url;
