@@ -32,10 +32,10 @@ const PortalBridge = (()=>{
    }
    let out;
    try{out=await res.json();}catch{setStatus('API ตอบกลับผิดรูปแบบ',true);throw Error('API ส่งข้อมูลตอบกลับไม่ถูกต้อง ตรวจการ Deploy Apps Script');}
-   if(!res.ok){setStatus('API ตอบกลับผิดพลาด',true);throw Error(String(out?.error||'เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+res.status+')'));}
+   if(!res.ok){setStatus('API ตอบกลับผิดพลาด',true);const msg=String(out?.error||'เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+res.status+')');throw Error(/Method not allowed/i.test(msg)?'ระบบแชทยังไม่ได้เปิดบน API: อัปเดต Worker และ doPost(e) ใน Apps Script':msg);}
    // A rejected student code/invite/PIN is an AUTH error, NOT an API outage.
    setStatus('พร้อมใช้งาน',false);
-   if(!out?.ok)throw Error(String(out?.error||'ไม่สามารถดำเนินการได้'));
+   if(!out?.ok){const msg=String(out?.error||'ไม่สามารถดำเนินการได้');throw Error(/Method not allowed|Unknown method/i.test(msg)?'Apps Script ยังไม่ได้เปิดคำสั่งแชท: เพิ่ม awGetExtras ใน doPost(e) แล้ว Deploy New version':msg);}
    return out.result;
   }catch(e){throw e;}
   finally{clearTimeout(tid);}

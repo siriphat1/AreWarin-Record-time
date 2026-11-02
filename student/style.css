@@ -127,3 +127,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @keyframes aw-slip-spin{to{transform:rotate(360deg)}}
 #pay-submit-btn{margin-top:5px;min-height:50px}
 #pop[data-busy='1'] .modal{cursor:progress}
+
+/* v1.6.3 — surface API routing failures instead of silently showing an empty chat */
+.aw-chat-error{display:flex;align-items:flex-start;gap:10px;background:#fff4e7;border:1px solid #f0d3a9;color:#774510;padding:14px 16px;border-radius:14px;margin:0 0 16px;font-size:13px;line-height:1.7}
+.aw-chat-error svg{flex:none;margin-top:3px}
