@@ -5,13 +5,15 @@ const PortalBridge = (()=>{
  const endpoint = String(window.STUDENT_CONFIG?.apiEndpoint||'').trim();
  const allowed = new Set(['appConfig','registerPhonePin','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip']);
  const status=()=>document.getElementById('connection-status');
- const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);el.classList.toggle('connected',!isError&&value==='พร้อมใช้งาน');};
+ const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);el.classList.toggle('idle',!isError&&value==='พร้อมเชื่อมต่อ');el.classList.toggle('connected',!isError&&value==='พร้อมใช้งาน');};
  let url;
  try{url=new URL(endpoint);}catch{}
  if(!url || url.protocol!=='https:' || !/^[a-zA-Z0-9.-]+$/.test(url.hostname)){
   document.addEventListener('DOMContentLoaded',()=>setStatus('ตั้งค่า API ใน student/config.js ก่อน',true));
  }else{
-  window.addEventListener('DOMContentLoaded',()=>{setStatus('เชื่อมต่อระบบ...',false);fetch(url.href,{method:'GET',cache:'no-store',referrerPolicy:'no-referrer'}).then(r=>{if(!r.ok)throw Error('API ไม่พร้อม');setStatus('พร้อมใช้งาน',false);}).catch(()=>setStatus('ไม่สามารถเชื่อม API — ตรวจ URL หรือสิทธิ์',true));});
+  // Do not send an unnecessary GET to the Apps Script relay on page load:
+  // the real POST request checks connectivity when the student submits the form.
+  document.addEventListener('DOMContentLoaded',()=>setStatus('พร้อมเชื่อมต่อ',false));
  }
  return {async call(name,args=[]){
   if(!allowed.has(name))throw Error('คำสั่งไม่ได้รับอนุญาต');
@@ -20,6 +22,7 @@ const PortalBridge = (()=>{
   if(body.length>6*1024*1024)throw Error('ข้อมูลหรือสลิปเกินขนาดที่ระบบรองรับ');
   const controller=new AbortController();const tid=setTimeout(()=>controller.abort(),45000);
   try{
+   setStatus('กำลังเชื่อมต่อ…',false);
    let res;
    try{
     res=await fetch(url.href,{method:'POST',mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',headers:{'Content-Type':'application/json'},body,signal:controller.signal});

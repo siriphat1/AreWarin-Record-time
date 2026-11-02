@@ -57,7 +57,7 @@ function upcomingClasses(){const today=thaiToday(),m=today.slice(0,7),date=new D
 function loginScreen(mode){
  app.authMode=mode;const active=mode==='activate';
  $('#root').innerHTML=`<div class="auth-wrap"><div class="auth-decoration"></div><div class="auth"><main class="auth-content"><div class="brand auth-brand"><span class="logo">A<span class="logo-dot">.</span></span><div><strong>AreWarin<span class="brand-sub"> / Biology</span></strong><small>THE STUDENT EXPERIENCE</small></div></div>
- <div class="auth-eyebrow"><span class="status-dot"></span> SECURE LEARNING SPACE <span class="auth-version">V1.4</span></div>
+ <div class="auth-eyebrow"><span class="status-dot"></span> SECURE LEARNING SPACE <span class="auth-version">V1.4.1</span></div>
  <div class="auth-symbol">${active?'✦':'↗'}</div><h1>${active?'เริ่มต้นการเรียนรู้<br><em>ในแบบของคุณ</em>':'ยินดีต้อนรับ<br><em>กลับมาอีกครั้ง</em>'}</h1>
  <p class="auth-intro">${active?'เริ่มด้วยเบอร์โทรศัพท์ที่ลงทะเบียนไว้ แล้วตั้ง PIN เพื่อเข้าสู่พื้นที่การเรียนของคุณ':'เข้าสู่ระบบเพื่อดูคอร์สเรียน ตารางเรียน และประวัติชั่วโมงทั้งหมดในที่เดียว'}</p>
  <form class="form" id="auth-form">
@@ -67,6 +67,7 @@ function loginScreen(mode){
  <label>${active?'ตั้ง PIN 4 หลัก':'PIN 4 หลัก'}<input id="login-pin" ${active?'':'required'} inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="${active?'new-password':'current-password'}" maxlength="4" placeholder="••••"></label>
  ${active?'<label>ยืนยัน PIN อีกครั้ง<input id="login-pin2" inputmode="numeric" pattern="[0-9]{4}" type="password" autocomplete="new-password" maxlength="4" placeholder="••••"></label>':''}
  <button class="btn primary full" type="submit">${active?'ยืนยันและเปิดบัญชี':'เข้าสู่ระบบ'} <span>→</span></button></div>
+ <div id="auth-progress" class="auth-progress" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="auth-progress-text">กำลังตรวจสอบข้อมูล…</span></div>
  <div id="auth-error" class="auth-error" role="alert" hidden></div></form>
  <div class="auth-switch"><span>${active?'มีบัญชีอยู่แล้ว?':'ยังไม่เคยเปิดใช้งาน?'}</span> <button type="button" id="toggle-auth">${active?'เข้าสู่ระบบ':'เริ่มเปิดบัญชี'}</button></div>
  <div class="auth-footer"><span>AREWARIN STUDENT PORTAL</span><span>PRIVATE • PERSONAL • SECURE</span></div>
@@ -74,17 +75,54 @@ function loginScreen(mode){
  const errorBox=$('#auth-error'),showError=m=>{errorBox.textContent=String(m);errorBox.hidden=false;message(m,true);},clearError=()=>{errorBox.hidden=true;errorBox.textContent='';};
  $('#toggle-auth').onclick=()=>loginScreen(active?'login':'activate');
  if(active){$('#next-step').onclick=()=>{clearError();const key=$('#login-code').value.trim().replace(/[\s()-]/g,'');if(!/^(0[689]\d{8}|(?:\+?66)[689]\d{8})$/.test(key))return showError('กรุณากรอกเบอร์โทรศัพท์มือถือไทยให้ถูกต้อง');$('#phone-step').hidden=true;$('#pin-step').hidden=false;$('#login-pin').required=true;$('#login-pin2').required=true;$('#login-pin').focus();};$('#back-step').onclick=()=>{$('#phone-step').hidden=false;$('#pin-step').hidden=true;$('#login-pin').required=false;$('#login-pin2').required=false;};}
- $('#auth-form').onsubmit=async e=>{e.preventDefault();clearError();const b=e.currentTarget.querySelector('button[type=submit]');const key=$('#login-code').value.trim(),pin=$('#login-pin').value;
- if(!/^\d{4}$/.test(pin))return showError('PIN ต้องเป็นตัวเลข 4 หลัก');if(active&&pin!==$('#login-pin2').value)return showError('PIN ทั้งสองช่องไม่ตรงกัน');
- const confirmation=active?await dialog({icon:'question',title:'ยืนยันการเปิดบัญชี',text:'โปรดตรวจสอบว่าคุณได้รับสิทธิ์เปิดบัญชีนี้จากผู้ดูแลแล้ว',showCancelButton:true,confirmButtonText:'ยืนยัน',cancelButtonText:'ยกเลิก'}):{isConfirmed:true};if(!confirmation.isConfirmed)return;
- b.disabled=true;try{if(window.Swal)Swal.fire({title:'กำลังตรวจสอบข้อมูล',text:'กำลังเชื่อมต่อบัญชีนักเรียน',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
- const r=active?await rpc('registerPhonePin',key,pin,$('#login-pin2').value):await rpc('loginStudent',key,pin);
- if(!r||!r.token)throw Error('ไม่พบเซสชันจาก API');app.token=r.token;sessionStorage.setItem('aw_student_token',r.token);app.invite=null;await refresh();if(!app.data)throw Error('โหลดข้อมูลบัญชีไม่สำเร็จ');
- if(window.Swal)Swal.close();await dialog({icon:'success',title:active?'เปิดบัญชีสำเร็จ':'เข้าสู่ระบบสำเร็จ',text:'ยินดีต้อนรับสู่ AreWarin Student Portal',timer:2200,showConfirmButton:false});
- if(active&&app.data?.student?.code){await dialog({icon:'success',title:'Student ID ของคุณ',html:`<div class="found-id"><strong>${esc(app.data.student.code)}</strong><small>จดบันทึกรหัสนี้ไว้เพื่อใช้เข้าสู่ระบบ</small></div>`,showCancelButton:true,confirmButtonText:'คัดลอก Student ID',cancelButtonText:'ปิด'}).then(result=>{if(result.isConfirmed)copyStudentId(app.data.student.code);});}
- }catch(err){if(window.Swal)Swal.close();showError(err?.message||'ไม่สามารถดำเนินการได้ โปรดตรวจสอบข้อมูล');}finally{b.disabled=false;}};
+ $('#auth-form').onsubmit=async e=>{
+  e.preventDefault();clearError();
+  const b=e.currentTarget.querySelector('button[type=submit]'),toggle=$('#toggle-auth');
+  const key=$('#login-code').value.trim(),pin=$('#login-pin').value;
+  if(!/^\d{4}$/.test(pin))return showError('PIN ต้องเป็นตัวเลข 4 หลัก');
+  if(active&&pin!==$('#login-pin2').value)return showError('PIN ทั้งสองช่องไม่ตรงกัน');
+  if(active){const confirmation=await dialog({icon:'question',title:'ยืนยันการเปิดบัญชี',text:'โปรดตรวจสอบว่าคุณได้รับสิทธิ์เปิดบัญชีนี้จากผู้ดูแลแล้ว',showCancelButton:true,confirmButtonText:'ยืนยัน',cancelButtonText:'ยกเลิก'});if(!confirmation.isConfirmed)return;}
+  const progress=$('#auth-progress'),progressText=$('#auth-progress-text');
+  const setStage=(text)=>{if(progress?.isConnected){progress.hidden=false;progressText.textContent=text;}};
+  const originalLabel=b.innerHTML;
+  b.disabled=true;toggle.disabled=true;b.innerHTML=active?'กำลังเปิดบัญชี…':'กำลังเข้าสู่ระบบ…';
+  setStage('กำลังตรวจสอบข้อมูลบัญชีอย่างปลอดภัย…');
+  const started=performance.now();let authMs=0,dataMs=0;
+  const slowTimer=setTimeout(()=>setStage('เซิร์ฟเวอร์ใช้เวลาตอบกลับนานกว่าปกติ กำลังดำเนินการต่อ…'),8500);
+  try{
+   const r=active?await rpc('registerPhonePin',key,pin,$('#login-pin2').value):await rpc('loginStudent',key,pin);
+   authMs=Math.round(performance.now()-started);
+   if(!r||!r.token)throw Error('ไม่พบเซสชันจาก API');
+   app.token=r.token;app.data=null;sessionStorage.setItem('aw_student_token',r.token);app.invite=null;
+   setStage('ยืนยันตัวตนแล้ว กำลังโหลดข้อมูลการเรียน…');
+   const dataStarted=performance.now();
+   // A future backend may optionally return the complete portal payload with login.
+   // Keep full backwards compatibility with the existing getMyData API.
+   const combined=r.portalData;
+   if(combined&&combined.student&&Array.isArray(combined.courses)&&Array.isArray(combined.attendance)&&Array.isArray(combined.billing)&&Array.isArray(combined.schedule)&&Array.isArray(combined.requests)&&Array.isArray(combined.makeup)&&Array.isArray(combined.lessonNotes)){
+     app.data=combined;render();
+   }else{
+     await refresh({throwOnError:true});
+   }
+   dataMs=Math.round(performance.now()-dataStarted);
+   console.info('[AreWarin] Login response time (ms):',authMs,'Student data (ms):',dataMs,'Total (ms):',Math.round(performance.now()-started));
+   // Non-blocking toast: the dashboard is already visible, no additional modal wait.
+   if(active&&app.data?.student?.code){
+     const id=app.data.student.code;
+     const res=await dialog({icon:'success',title:'เปิดบัญชีสำเร็จ · Student ID ของคุณ',html:`<div class="found-id"><strong>${esc(id)}</strong><small>จดบันทึกรหัสนี้ไว้เพื่อใช้เข้าสู่ระบบ</small></div>`,showCancelButton:true,confirmButtonText:'คัดลอก Student ID',cancelButtonText:'ปิด'});
+     if(res.isConfirmed)void copyStudentId(id);
+   }else if(window.Swal){
+     void Swal.fire({toast:true,position:'top-end',icon:'success',title:'เข้าสู่ระบบสำเร็จ',timer:1150,showConfirmButton:false,timerProgressBar:true});
+   }
+  }catch(err){
+   console.info('[AreWarin] Login request failed after (ms):',Math.round(performance.now()-started));
+   if(!$('#auth-form'))loginScreen(active?'activate':'login');
+   const visible=$('#auth-error');if(visible){visible.textContent=String(err?.message||'ไม่สามารถดำเนินการได้ โปรดตรวจสอบข้อมูล');visible.hidden=false;}
+   message(err?.message||'ไม่สามารถดำเนินการได้ โปรดตรวจสอบข้อมูล',true);
+  }finally{clearTimeout(slowTimer);if(progress?.isConnected)progress.hidden=true;if(b.isConnected){b.disabled=false;b.innerHTML=originalLabel;}if(toggle.isConnected)toggle.disabled=false;}
+ };
 }
-async function refresh(){if(!app.token){loginScreen(app.invite?'activate':'login');return;}try{app.data=await rpc('getMyData',app.token);render();}catch(e){app.token='';sessionStorage.removeItem('aw_student_token');message(e.message,true);loginScreen('login');}}
+async function refresh({throwOnError=false}={}){if(!app.token){loginScreen(app.invite?'activate':'login');return;}try{app.data=await rpc('getMyData',app.token);render();}catch(e){app.token='';app.data=null;sessionStorage.removeItem('aw_student_token');if(throwOnError)throw e;message(e.message,true);loginScreen('login');}}
 async function logout(){const confirm=await dialog({icon:'question',title:'ออกจากระบบ?',text:'คุณจะต้องกรอก PIN อีกครั้งเมื่อกลับมาใช้งาน',showCancelButton:true,confirmButtonText:'ออกจากระบบ',cancelButtonText:'อยู่ต่อ'});if(!confirm.isConfirmed)return;try{if(app.token)await rpc('logoutStudent',app.token);}catch(e){await message('ไม่สามารถแจ้งเซิร์ฟเวอร์ให้ออกจากระบบได้ แต่จะล้างเซสชันในอุปกรณ์นี้',true);}finally{app.token='';sessionStorage.removeItem('aw_student_token');app.data=null;loginScreen('login');await message('ออกจากระบบแล้ว');}}
 const menu=[['dashboard','house','หน้าแรก'],['schedule','calendar','ตาราง'],['courses','layers','คอร์ส'],['payments','wallet','ชำระเงิน'],['profile','user','บัญชี']];
 const menuExtra=[['history','clock','ประวัติการเรียน'],['requests','clipboard','ลา / ชดเชย / คำขอ'],['progress','book-check','บันทึกการเรียน']];
@@ -93,7 +131,7 @@ function render(){
  const d=app.data,s=d.student;
  const nav=[...menu,...menuExtra].map(([id,ic,label])=>`<button type="button" class="nav-item ${app.view===id?'active':''}" data-nav="${id}">${ico(ic,20)}<span>${label}</span></button>`).join('');
  const mobile=menu.map(([id,ic,label])=>`<button type="button" class="${app.view===id?'active':''}" data-nav="${id}" aria-label="${label}">${ico(ic,21)}<span>${label}</span></button>`).join('');
- $('#root').innerHTML=`<div class="shell"><aside class="sidebar" aria-label="เมนูหลัก"><div class="sidebar-top"><div class="brand brand-sidebar"><span class="logo brand-mark">A</span><div><strong>AreWarin</strong><small>STUDENT PORTAL</small></div></div><div class="nav-caption">LEARNING SPACE</div><nav class="nav">${nav}</nav></div><div class="sidebar-foot"><div class="sidebar-graphic">${ico('graduation',25)}</div><strong>Learning, made personal.</strong><span>AreWarin Tutor · v1.4</span></div></aside><main class="main"><header class="top"><div class="top-copy"><div class="kicker">AREWARIN / STUDENT PORTAL</div><h1 class="title">${esc(pageTitles[app.view]||'My Learning')}</h1><p class="sub">${esc(s.name||'นักเรียน')}${[s.school,s.grade].filter(Boolean).length?' · '+esc([s.school,s.grade].filter(Boolean).join(' · ')):''}</p></div><div class="header-actions"><span class="privacy-chip">${ico('shield',15)} พื้นที่ส่วนตัว</span><button class="idpill copy-pill" id="copy-header-id" type="button" title="คัดลอกรหัสนักเรียน">ID: ${esc(s.code||'—')}${ico('copy',15)}</button></div></header><div id="page">${pageHtml()}</div><footer class="page-footer">AREWARIN STUDENT PORTAL <span>STUDY • GROW • ACHIEVE</span></footer></main><nav class="mobilebar" aria-label="เมนูมือถือ">${mobile}</nav></div>`;
+ $('#root').innerHTML=`<div class="shell"><aside class="sidebar" aria-label="เมนูหลัก"><div class="sidebar-top"><div class="brand brand-sidebar"><span class="logo brand-mark">A</span><div><strong>AreWarin</strong><small>STUDENT PORTAL</small></div></div><div class="nav-caption">LEARNING SPACE</div><nav class="nav">${nav}</nav></div><div class="sidebar-foot"><div class="sidebar-graphic">${ico('graduation',25)}</div><strong>Learning, made personal.</strong><span>AreWarin Tutor · v1.4.1</span></div></aside><main class="main"><header class="top"><div class="top-copy"><div class="kicker">AREWARIN / STUDENT PORTAL</div><h1 class="title">${esc(pageTitles[app.view]||'My Learning')}</h1><p class="sub">${esc(s.name||'นักเรียน')}${[s.school,s.grade].filter(Boolean).length?' · '+esc([s.school,s.grade].filter(Boolean).join(' · ')):''}</p></div><div class="header-actions"><span class="privacy-chip">${ico('shield',15)} พื้นที่ส่วนตัว</span><button class="idpill copy-pill" id="copy-header-id" type="button" title="คัดลอกรหัสนักเรียน">ID: ${esc(s.code||'—')}${ico('copy',15)}</button></div></header><div id="page">${pageHtml()}</div><footer class="page-footer">AREWARIN STUDENT PORTAL <span>STUDY • GROW • ACHIEVE</span></footer></main><nav class="mobilebar" aria-label="เมนูมือถือ">${mobile}</nav></div>`;
  document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{app.view=b.dataset.nav;render();window.scrollTo({top:0,behavior:'instant'});});
  wirePage();
 }
