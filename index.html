@@ -31,6 +31,7 @@
 body.theme-dark .pm-page{color:#e1eee5}body.theme-dark .pm-metric,body.theme-dark .pm-panel{background:#1b2923;border-color:#364b3f}body.theme-dark .pm-metric strong,body.theme-dark .pm-panel h2,body.theme-dark .pm-person-info strong,body.theme-dark .pm-request-main strong{color:#e8f4e8}body.theme-dark .pm-metric-accent{background:#193b2c}body.theme-dark .pm-table-head{background:#23352a;border-color:#364a3e}body.theme-dark .pm-person{border-color:#334b3b}body.theme-dark .pm-person:hover{background:#21382a}body.theme-dark .pm-search,body.theme-dark .pm-toolbar select{background:#223629!important;border-color:#375541!important;color:#dce8de!important}body.theme-dark .pm-search input{color:#e0ece2!important}body.theme-dark .pm-code{background:#233b2c;border-color:#426149;color:#b5dec2}
 @media(max-width:1100px){.pm-table-head{display:none}.pm-person{grid-template-columns:43px minmax(140px,1fr) auto;gap:12px}.pm-person-code{grid-column:2;grid-row:2}.pm-person-state{grid-column:3;grid-row:1}.pm-person-actions{grid-column:3;grid-row:2}.pm-request{align-items:flex-start;flex-wrap:wrap}.pm-request .pm-actions{width:100%;justify-content:flex-start;padding-left:54px}}
 @media(max-width:720px){.pm-page{padding-bottom:30px}.pm-hero{padding:23px;border-radius:16px;flex-direction:column;align-items:stretch;gap:17px}.pm-hero h1{font-size:23px}.pm-hero-tools{align-items:stretch}.pm-hero-tools>small{text-align:left}.pm-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0 18px}.pm-metric{min-height:112px;padding:13px 14px;border-radius:14px}.pm-metric strong{font-size:28px}.pm-metric>small{font-size:11px}.pm-metric-icon{right:11px;top:9px}.pm-tabs{gap:0}.pm-tab{font-size:11px;padding:11px 10px}.pm-panel-heading{padding:18px 16px 10px}.pm-panel-heading h2{font-size:15px}.pm-panel-heading p{font-size:11px}.pm-toolbar{grid-template-columns:1fr;padding:10px 15px 15px}.pm-person{padding:14px 15px;grid-template-columns:38px minmax(0,1fr);gap:9px}.pm-avatar{width:37px;height:37px}.pm-person-info{grid-column:2;grid-row:1}.pm-person-code{grid-column:2;grid-row:2}.pm-person-state{grid-column:2;grid-row:3}.pm-person-actions{grid-column:2;grid-row:4;justify-content:flex-start}.pm-person-actions .pm-btn{min-height:34px}.pm-panel-foot{padding:13px 16px}.pm-request-list{padding:0 12px 12px}.pm-request{gap:10px}.pm-request .pm-actions{padding-left:0}.pm-request-icon{width:36px;height:36px}}
+.pm-auto-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 </style>
   <script src="config.js"></script>
   <script defer src="https://accounts.google.com/gsi/client"></script>
@@ -277,11 +278,90 @@ class SheetsStore{
   constructor(token){this.token=token;this.sids={};}
   async request(path,method='GET',payload){const res=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+encodeURIComponent(config.spreadsheetId)+path,{method,headers:{Authorization:'Bearer '+this.token,...(payload?{'Content-Type':'application/json'}:{})},body:payload?JSON.stringify(payload):undefined});if(!res.ok){const err=await res.json().catch(()=>({}));let reason=err.error?.message||`HTTP ${res.status}`;if(res.status===401){reason+=' · สิทธิ์หมดอายุ กดเชื่อมบัญชีอีกครั้ง';clearGoogleSession();state.token='';state.mode='needs_login';if(document.querySelector('#app'))render();}throw Error(reason);}return res.json();}
   async load(){const meta=await this.request('?fields=sheets(properties(sheetId,title))');this.sids=Object.fromEntries(meta.sheets.map(s=>[s.properties.title,s.properties.sheetId]));for(const name of Object.keys(SCHEMA))if(this.sids[name]===undefined)throw Error('ไม่พบชีต '+name+' — กรุณารัน setupTutorOS() ก่อน');const ranges=Object.keys(SCHEMA).map(s=>`${s}!A2:${String.fromCharCode(64+SCHEMA[s].length)}10000`);const data=await this.request('/values:batchGet?ranges='+ranges.map(encodeURIComponent).join('&ranges=')+'&valueRenderOption=UNFORMATTED_VALUE');return Object.fromEntries(Object.keys(SCHEMA).map((s,i)=>[s,(data.valueRanges[i]?.values||[]).filter(row=>row.some(v=>v!==''&&v!==null)).map(r=>obj(s,r))]));}
-  async commit(changes){const requests=[];const latest=state.data;for(const [sheet,updates] of Object.entries(changes.update||{})){const ids=latest[sheet].map(x=>x.id);for(const value of updates){const i=ids.indexOf(value.id);if(i<0)throw Error(`Row ${value.id} not found`);requests.push({updateCells:{range:{sheetId:this.sids[sheet],startRowIndex:i+1,endRowIndex:i+2,startColumnIndex:0,endColumnIndex:SCHEMA[sheet].length},rows:[{values:row(sheet,value).map(toCell)}],fields:'userEnteredValue'}});}}for(const [sheet,adds] of Object.entries(changes.add||{})){if(!adds.length)continue;requests.push({appendCells:{sheetId:this.sids[sheet],rows:adds.map(a=>({values:row(sheet,a).map(toCell)})),fields:'userEnteredValue'}});}if(!requests.length)return state.data;await this.request(':batchUpdate','POST',{requests});return this.load();}
+  async commit(changes,options={}){const requests=[];const latest=state.data;for(const [sheet,updates] of Object.entries(changes.update||{})){const ids=latest[sheet].map(x=>x.id);for(const value of updates){const i=ids.indexOf(value.id);if(i<0)throw Error(`Row ${value.id} not found`);requests.push({updateCells:{range:{sheetId:this.sids[sheet],startRowIndex:i+1,endRowIndex:i+2,startColumnIndex:0,endColumnIndex:SCHEMA[sheet].length},rows:[{values:row(sheet,value).map(toCell)}],fields:'userEnteredValue'}});}}for(const [sheet,adds] of Object.entries(changes.add||{})){if(!adds.length)continue;requests.push({appendCells:{sheetId:this.sids[sheet],rows:adds.map(a=>({values:row(sheet,a).map(toCell)})),fields:'userEnteredValue'}});}if(!requests.length)return state.data;await this.request(':batchUpdate','POST',{requests});return options.fast?awApplyLocalChanges(state.data,changes):this.load();}
 }
 function toCell(value){if(typeof value==='number')return {userEnteredValue:{numberValue:value}};return {userEnteredValue:{stringValue:String(value??'')}};}
 async function reload(){state.data=await store.load();render();}
-async function commit(changes){if(state.busy)throw Error('กำลังบันทึกข้อมูล');state.busy=true;showBusy('กำลังบันทึกข้อมูลและอัปเดตชั่วโมง…');try{state.data=await store.commit(changes);render();}finally{state.busy=false;hideBusy();}}
+// Keep the source arrays unchanged until Google Sheets confirms the write.
+function awApplyLocalChanges(source,changes){
+ const result={...source};
+ for(const [name,updates] of Object.entries(changes.update||{})){
+  const byId=new Map((updates||[]).map(v=>[String(v.id),v]));
+  result[name]=(source[name]||[]).map(row=>byId.get(String(row.id))||row);
+ }
+ for(const [name,adds] of Object.entries(changes.add||{})){
+  result[name]=[...(result[name]||source[name]||[]),...(adds||[])];
+ }
+ return result;
+}
+// Build student-facing events in the same Sheets batch as the actual change.
+// Notice generation is based on structured mutations, not UI labels or toast text.
+function awAutomaticStudentNotices(changes){
+ const added=changes.add||{},updates=changes.update||{},explicit=added.PortalNotifications||[];
+ const notices=[], grouped=new Map();
+ const student=id=>!!id&&!!byId('Students',id);
+ const titleMatch={leave:/ลา|พักเรียน|กลับมา/,makeup:/ชดเชย/,attendance:/บันทึก.*เรียน|ชั่วโมงเรียน|เวลาเรียน|แก้ไข.*คาบ|ยกเลิก.*คาบ/,balance:/ปรับ.*ชั่วโมง|เติม.*ชั่วโมง|ต่อคอร์ส/,billing:/ชำระ|ยอด.*เงิน|ค่าคาบ|คืนเงิน/};
+ function collect(sid,kind,title,detail){
+  if(!student(sid))return;
+  if(explicit.some(n=>n.student_id===sid&&titleMatch[kind]?.test(String(n.title||''))))return;
+  const key=sid+'|'+kind;
+  if(!grouped.has(key))grouped.set(key,{sid,title,details:[]});
+  grouped.get(key).details.push(detail);
+ }
+ const sdate=ses=>ses?.date?String(ses.date):'วันที่ตามตาราง';
+ for(const leave of (added.LeaveRecords||[]))collect(leave.student_id,'leave','บันทึกการลา / พักเรียน',`ตั้งแต่ ${leave.start_date||'ไม่ระบุวัน'}${leave.end_date?' ถึง '+leave.end_date:''}`);
+ for(const leave of (updates.LeaveRecords||[])){
+  const prev=byId('LeaveRecords',leave.id);
+  if(prev?.status!==leave.status)collect(leave.student_id,'leave','อัปเดตสถานะการลา',`สถานะ ${leave.status==='ended'?'กลับมาเรียนแล้ว':leave.status==='cancelled'?'ยกเลิกการลา':leave.status}`);
+ }
+ for(const m of (added.MakeupCredits||[]))collect(m.student_id,'makeup','อัปเดตการเรียนชดเชย',m.scheduled_date?`นัดชดเชย ${m.scheduled_date}`:`สิทธิ์ชดเชยคาบวันที่ ${m.origin_date||'—'}`);
+ for(const m of (updates.MakeupCredits||[])){
+  const prev=byId('MakeupCredits',m.id);
+  if(prev&&(prev.status!==m.status||prev.scheduled_date!==m.scheduled_date))collect(m.student_id,'makeup','อัปเดตนัดเรียนชดเชย',m.scheduled_date?`วันที่ ${m.scheduled_date} ${m.start_time||''}–${m.end_time||''}`:`สถานะ ${m.status}`);
+ }
+ for(const a of (added.Attendance||[])){
+  if(a.status!=='approved')continue;
+  const ses=(added.Sessions||[]).find(s=>s.id===a.session_id)||byId('Sessions',a.session_id);
+  const c=byId('Courses',a.course_id);
+  collect(a.student_id,'attendance','บันทึกเวลาเรียนแล้ว',`${sdate(ses)} · ${c?.title||'คอร์สเรียน'} · ${nice(a.deduct_minutes||0)}`);
+ }
+ for(const a of (updates.Attendance||[])){
+  const prev=byId('Attendance',a.id);if(!prev)continue;
+  if(prev.status===a.status&&Number(prev.deduct_minutes)===Number(a.deduct_minutes)&&prev.join_time===a.join_time&&prev.leave_time===a.leave_time)continue;
+  const ses=byId('Sessions',a.session_id),c=byId('Courses',a.course_id);
+  collect(a.student_id,'attendance','ปรับปรุงข้อมูลเวลาเรียน',`${sdate(ses)} · ${c?.title||'คอร์สเรียน'} · ${a.status==='cancelled'?'ยกเลิกคาบเรียน':nice(a.deduct_minutes||0)}`);
+ }
+ for(const l of (added.Ledger||[])){
+  if(!['adjustment','purchase','topup','refund'].includes(String(l.type||'')))continue;
+  const c=byId('Courses',l.course_id);
+  collect(l.student_id||c?.student_id,'balance',l.type==='refund'?'คืนชั่วโมงเรียนแล้ว':l.type==='adjustment'?'ปรับยอดชั่วโมงเรียน':'เพิ่มชั่วโมงเรียน',`${c?.title||'คอร์สเรียน'} · ${Number(l.minutes)>=0?'+':'−'}${nice(Math.abs(Number(l.minutes)||0))}`);
+ }
+ for(const b of (added.Billing||[])){
+  if(!['unpaid','partial'].includes(b.status))continue;
+  collect(b.student_id,'billing','แจ้งยอดค่าคาบเรียนใหม่',`${byId('Courses',b.course_id)?.title||'คอร์สเรียน'} · ${baht(b.amount_satang)}`);
+ }
+ for(const b of (updates.Billing||[])){
+  const prev=byId('Billing',b.id);if(!prev)continue;
+  if(prev.status===b.status&&Number(prev.amount_satang)===Number(b.amount_satang))continue;
+  collect(b.student_id,'billing',b.status==='paid'?'รับชำระเงินแล้ว':'อัปเดตยอดค่าคาบเรียน',`${byId('Courses',b.course_id)?.title||'คอร์สเรียน'} · ${baht(b.amount_satang)} (${b.status})`);
+ }
+ for(const {sid,title,details} of grouped.values()){
+  notices.push({id:uuid(),student_id:sid,title,message:details.slice(0,3).join(' | ')+(details.length>3?` และอีก ${details.length-3} รายการ`:''),read_at:'',created_at:now()});
+ }
+ return notices;
+}
+async function commit(changes,options={}){
+ if(state.busy)throw Error('กำลังดำเนินการ กรุณารอสักครู่');
+ state.busy=true;
+ const busyText=options.busyText||'กำลังบันทึกข้อมูล…';
+ showBusy(busyText);
+ try{
+  const notices=awAutomaticStudentNotices(changes);
+  if(notices.length){changes={...changes,add:{...(changes.add||{}),PortalNotifications:[...(changes.add?.PortalNotifications||[]),...notices]}};}
+  state.data=await store.commit(changes,{fast:options.fast===true});
+  render();
+ }finally{state.busy=false;hideBusy();}
+}
 function saveAudit(action,target,details){return {id:uuid(),action,target_id:target,details:JSON.stringify(details||{}),created_at:now()};}
 
 let pendingSummaryAction=null;
@@ -1624,7 +1704,7 @@ function portalManagerView(){
   <div class="pm-panel-foot"><span>กำลังแสดง <strong id="pm-visible-count">${students.length}</strong> จาก ${students.length} คน</span><span>ยืนยันเบอร์โทรด้วย SMS OTP ก่อนตั้ง PIN</span></div>
  </section>
  <section class="pm-panel" id="pm-panel-requests" ${portalUi.tab!=='requests'?'hidden':''}>
-  <div class="pm-panel-heading"><div><h2>Approval Inbox</h2><p>ตรวจสอบข้อมูลก่อนอนุมัติ โดยเฉพาะหลักฐานการโอนเงิน</p></div><span class="pm-mini-tag">${pending.length} รายการ</span></div>
+  <div class="pm-panel-heading"><div><h2>Approval Inbox</h2><p>ตรวจสอบข้อมูลก่อนอนุมัติ โดยเฉพาะหลักฐานการโอนเงิน</p></div><div class="pm-auto-actions"><span class="pm-mini-tag">${pending.length} รายการ</span><button type="button" class="pm-btn pm-btn-outline" data-action="portal-refresh-requests">↻ ตรวจสลิปล่าสุด</button></div></div>
   <div class="pm-request-list">${requestItems||'<div class="pm-empty"><div class="pm-empty-icon">✓</div><strong>ไม่มีคำขอที่รอตรวจสอบ</strong><p>รายการใหม่จาก Student Portal จะแสดงที่นี่</p></div>'}</div>
   <p class="pm-footnote">การอนุมัติค่าคาบต้องตรวจเงินเข้าจริงก่อนเสมอ · การต่อคอร์สต้องเพิ่มคอร์สในระบบผู้ดูแลแยกต่างหาก</p>
  </section></div></div>`;
@@ -1675,7 +1755,7 @@ async function portalResolveRequest(id,approve){state.data=await store.load();co
  if(approve&&r.kind==='pause'&&r.date){changes.add.LeaveRecords=[{id:uuid(),student_id:r.student_id,course_id:r.course_id,kind:'pause',start_date:r.date,end_date:r.target_date||'',expected_return:r.target_date||'',reason:r.note||'คำขอจาก Student Portal',status:'active',created_at:now(),updated_at:now()}];}
  await commit(changes);toast(approve?'อนุมัติแล้ว — ตรวจรายการประวัติเรียบร้อย':'ปฏิเสธคำขอแล้ว');
 }
-function installPortalControls(){document.addEventListener('click',async e=>{const t=e.target.closest('[data-action^="portal-"]');if(!t)return;e.preventDefault();e.stopImmediatePropagation();try{switch(t.dataset.action){case 'portal-tab':portalUi.tab=t.dataset.tab==='requests'?'requests':'accounts';render();portalApplyFilters();break;case 'portal-bulk-open':portalBulkOpen();break;case 'portal-bulk-cancel':closeModal();break;case 'portal-bulk-confirm':{t.disabled=true;try{await portalBulkCreate([...document.querySelectorAll('[name="pm-bulk-student"]:checked')].map(x=>x.value));}finally{if(t.isConnected)t.disabled=false;}break;}case 'portal-copy-bulk':{const field=document.getElementById('pm-bulk-invite-'+Number(t.dataset.index));if(field){await navigator.clipboard.writeText(field.value);toast('คัดลอกแล้ว · ส่งให้นักเรียนเป็นรายบุคคล');}break;}case 'portal-phone':portalPhoneOpen(t.dataset.id);break;case 'portal-phone-save':await portalPhoneSave(t.dataset.id);break;case 'portal-create':await portalIssue(t.dataset.id,false);break;case 'portal-reset':await portalIssue(t.dataset.id,true);break;case 'portal-show':await portalIssue(t.dataset.id,false);break;case 'portal-copy':await navigator.clipboard.writeText(document.querySelector('#portal-invite-text').value);toast('คัดลอกแล้ว');break;case 'portal-slip':window.open('https://drive.google.com/file/d/'+encodeURIComponent(t.dataset.id)+'/view','_blank','noopener');break;case 'portal-approve':await portalResolveRequest(t.dataset.id,true);break;case 'portal-reject':await portalResolveRequest(t.dataset.id,false);break;}}catch(err){notice(err);}},true);}
+function installPortalControls(){document.addEventListener('click',async e=>{const t=e.target.closest('[data-action^="portal-"]');if(!t)return;e.preventDefault();e.stopImmediatePropagation();try{switch(t.dataset.action){case 'portal-tab':portalUi.tab=t.dataset.tab==='requests'?'requests':'accounts';if(portalUi.tab==='requests')await awSyncPortalRequests({quiet:true});render();portalApplyFilters();break;case 'portal-bulk-open':portalBulkOpen();break;case 'portal-bulk-cancel':closeModal();break;case 'portal-bulk-confirm':{t.disabled=true;try{await portalBulkCreate([...document.querySelectorAll('[name="pm-bulk-student"]:checked')].map(x=>x.value));}finally{if(t.isConnected)t.disabled=false;}break;}case 'portal-copy-bulk':{const field=document.getElementById('pm-bulk-invite-'+Number(t.dataset.index));if(field){await navigator.clipboard.writeText(field.value);toast('คัดลอกแล้ว · ส่งให้นักเรียนเป็นรายบุคคล');}break;}case 'portal-phone':portalPhoneOpen(t.dataset.id);break;case 'portal-phone-save':await portalPhoneSave(t.dataset.id);break;case 'portal-create':await portalIssue(t.dataset.id,false);break;case 'portal-reset':await portalIssue(t.dataset.id,true);break;case 'portal-show':await portalIssue(t.dataset.id,false);break;case 'portal-copy':await navigator.clipboard.writeText(document.querySelector('#portal-invite-text').value);toast('คัดลอกแล้ว');break;case 'portal-refresh-requests':await awSyncPortalRequests({quiet:false});break;case 'portal-slip':window.open('https://drive.google.com/file/d/'+encodeURIComponent(t.dataset.id)+'/view','_blank','noopener');break;case 'portal-approve':await portalResolveRequest(t.dataset.id,true);break;case 'portal-reject':await portalResolveRequest(t.dataset.id,false);break;}}catch(err){notice(err);}},true);}
 installPortalControls();
 document.addEventListener('input',e=>{if(e.target?.id==='pm-student-search')portalApplyFilters();});
 document.addEventListener('change',e=>{if(e.target?.id==='pm-student-filter')portalApplyFilters();if(e.target?.id==='pm-bulk-all'){document.querySelectorAll('[name="pm-bulk-student"]').forEach(x=>x.checked=e.target.checked);portalBulkCount();}if(e.target?.name==='pm-bulk-student')portalBulkCount();});
@@ -1692,11 +1772,11 @@ function awMakeMessages(){const list=all('ChatMessages').filter(x=>x.student_id=
 let awSelectedStudent='';
 function awRefreshBadges(){const count=all('ChatMessages').filter(m=>m.sender==='student'&&!m.read_at).length;const badge=document.getElementById('aw-chat-badge');if(badge)badge.textContent=count?`(${count})`:'';const bell=document.getElementById('aw-admin-badge');if(bell){const n=all('PortalRequests').filter(r=>r.status==='pending').length+count;bell.hidden=!n;bell.textContent=n>99?'99+':String(n);}}
 function awAdminChatPage(){const ss=all('Students').filter(s=>s.status!=='deleted').sort((a,b)=>a.name.localeCompare(b.name,'th'));if(!awSelectedStudent||!ss.some(s=>s.id===awSelectedStudent))awSelectedStudent=ss[0]?.id||'';const count=(sid)=>all('ChatMessages').filter(m=>m.student_id===sid&&m.sender==='student'&&!m.read_at).length;return `${head('STUDENT MESSAGING','ข้อความนักเรียน','คุยกับนักเรียนแบบส่วนตัว · ข้อมูลผ่าน Google Sheets โดยใช้สิทธิ์ผู้ดูแลเท่านั้น')}<section class="panel aw-messaging"><aside class="aw-conversations"><div class="aw-conversations-head">บทสนทนา <button type="button" class="btn soft" data-action="aw-chat-refresh">↻ รีเฟรช</button></div>${ss.map(s=>`<button class="aw-conv ${s.id===awSelectedStudent?'active':''}" data-aw-chat-student="${esc(s.id)}"><span class="aw-avatar">${esc(s.name.slice(0,1))}</span><span><strong>${esc(s.name)}</strong><small>${esc(s.school||'Student')}</small></span>${count(s.id)?`<i>${count(s.id)}</i>`:''}</button>`).join('')}</aside><div class="aw-messages"><div class="aw-conversations-head">${esc(studentName(awSelectedStudent))} <span>ข้อความส่วนตัว</span></div><div class="aw-chat-scroll" id="aw-chat-scroll">${awMakeMessages()}</div><div class="aw-chat-presets"><button type="button" data-aw-preset="สวัสดีครับ มีอะไรให้ช่วยไหมครับ">ทักทาย</button><button type="button" data-aw-preset="รับทราบครับ จะตรวจสอบตารางและแจ้งกลับอีกครั้ง">รับทราบ</button><button type="button" data-aw-preset="ตรวจสอบยอดชำระในเมนูชำระเงินได้เลยครับ">แจ้งยอด</button></div><form id="aw-admin-chat-form" class="aw-send-form"><input name="body" id="aw-admin-chat-body" maxlength="1000" required autocomplete="off" placeholder="พิมพ์ข้อความถึงนักเรียน…"><button class="btn primary">ส่งข้อความ</button></form></div></section>`;}
-async function awMarkAdminChat(sid){const unseen=all('ChatMessages').filter(m=>m.student_id===sid&&m.sender==='student'&&!m.read_at);if(!unseen.length)return;await commit({update:{ChatMessages:unseen.map(m=>({...m,read_at:now()}))}});}
-function awAdminSettingsPage(){const brand=all('PortalBranding')[0]||{},profiles=all('TutorProfiles');return `${head('STUDIO / PEOPLE','ข้อมูลสตูดิโอและผู้สอน','ใส่โลโก้และภาพโปรไฟล์ที่มี URL แบบ HTTPS · รูปจะปรากฏที่ Student Portal')}<div class="aw-settings-grid"><section class="panel aw-settings-panel"><h2>โลโก้ของสตูดิโอ</h2><form id="aw-brand-form" class="form">${field('aw-studio-name','ชื่อสตูดิโอ','text',brand.studio_name||'AreWarin Tutor','required maxlength="90"')}${field('aw-logo-url','URL รูปโลโก้ (HTTPS)','url',brand.logo_url||'','placeholder="https://.../logo.png"')}<button class="btn primary" type="submit">บันทึกข้อมูลสตูดิโอ</button></form>${brand.logo_url?`<img class="aw-logo-preview" src="${esc(brand.logo_url)}" alt="Studio Logo">`:''}</section><section class="panel aw-settings-panel"><h2>โปรไฟล์ผู้สอน</h2><form id="aw-tutor-form" class="form"><input type="hidden" name="tutorId" value="${esc(awEditingTutor||'')}">${field('aw-tutor-name','ชื่อผู้สอน','text',profiles.find(x=>x.id===awEditingTutor)?.display_name||'','required maxlength="100"')}${field('aw-tutor-role','ตำแหน่ง','text',profiles.find(x=>x.id===awEditingTutor)?.role||'ติวเตอร์ชีววิทยา','maxlength="120"')}${field('aw-tutor-subjects','วิชาที่สอน','text',profiles.find(x=>x.id===awEditingTutor)?.subjects||'','maxlength="200"')}${field('aw-tutor-photo','URL รูปผู้สอน (HTTPS)','url',profiles.find(x=>x.id===awEditingTutor)?.photo_url||'','placeholder="https://.../tutor.jpg"') }<div class="field"><label>ประวัติ/แนะนำตัว</label><textarea name="bio" id="aw-tutor-bio" rows="3" maxlength="800">${esc(profiles.find(x=>x.id===awEditingTutor)?.bio||'')}</textarea></div><button class="btn primary" type="submit">${awEditingTutor?'บันทึกการแก้ไข':'เพิ่มผู้สอน'}</button></form></section></div><section class="panel mt20 aw-settings-panel"><h2>ผู้สอนทั้งหมด</h2>${profiles.map(t=>`<div class="aw-person-row">${t.photo_url?`<img src="${esc(t.photo_url)}" alt="">`:'<span class="aw-avatar">T</span>'}<div><strong>${esc(t.display_name)}</strong><small>${esc(t.role)} · ${esc(t.subjects)}</small></div><button type="button" class="btn soft" data-aw-edit-tutor="${esc(t.id)}">แก้ไข</button></div>`).join('')||'<p class="empty">ยังไม่มีผู้สอน</p>'}</section>`;}
+async function awMarkAdminChat(sid){const unseen=all('ChatMessages').filter(m=>m.student_id===sid&&m.sender==='student'&&!m.read_at);if(!unseen.length)return;await commit({update:{ChatMessages:unseen.map(m=>({...m,read_at:now()}))}},{busyText:'กำลังทำเครื่องหมายว่าอ่านแล้ว…',fast:true});}
+function awAdminSettingsPage(){const brand=all('PortalBranding')[0]||{},profiles=all('TutorProfiles');return `${head('STUDIO / PEOPLE','ข้อมูลสตูดิโอและผู้สอน','ใส่โลโก้และภาพโปรไฟล์ที่มี URL แบบ HTTPS · รูปจะปรากฏที่ Student Portal และตรงกลาง QR ชำระเงิน (เมื่อตั้ง URL โลโก้แล้ว)')}<div class="aw-settings-grid"><section class="panel aw-settings-panel"><h2>โลโก้ของสตูดิโอ</h2><form id="aw-brand-form" class="form">${field('aw-studio-name','ชื่อสตูดิโอ','text',brand.studio_name||'AreWarin Tutor','required maxlength="90"')}${field('aw-logo-url','URL รูปโลโก้ (HTTPS)','url',brand.logo_url||'','placeholder="https://.../logo.png"')}<button class="btn primary" type="submit">บันทึกข้อมูลสตูดิโอ</button></form>${brand.logo_url?`<img class="aw-logo-preview" src="${esc(brand.logo_url)}" alt="Studio Logo">`:''}</section><section class="panel aw-settings-panel"><h2>โปรไฟล์ผู้สอน</h2><form id="aw-tutor-form" class="form"><input type="hidden" name="tutorId" value="${esc(awEditingTutor||'')}">${field('aw-tutor-name','ชื่อผู้สอน','text',profiles.find(x=>x.id===awEditingTutor)?.display_name||'','required maxlength="100"')}${field('aw-tutor-role','ตำแหน่ง','text',profiles.find(x=>x.id===awEditingTutor)?.role||'ติวเตอร์ชีววิทยา','maxlength="120"')}${field('aw-tutor-subjects','วิชาที่สอน','text',profiles.find(x=>x.id===awEditingTutor)?.subjects||'','maxlength="200"')}${field('aw-tutor-photo','URL รูปผู้สอน (HTTPS)','url',profiles.find(x=>x.id===awEditingTutor)?.photo_url||'','placeholder="https://.../tutor.jpg"') }<div class="field"><label>ประวัติ/แนะนำตัว</label><textarea name="bio" id="aw-tutor-bio" rows="3" maxlength="800">${esc(profiles.find(x=>x.id===awEditingTutor)?.bio||'')}</textarea></div><button class="btn primary" type="submit">${awEditingTutor?'บันทึกการแก้ไข':'เพิ่มผู้สอน'}</button></form></section></div><section class="panel mt20 aw-settings-panel"><h2>ผู้สอนทั้งหมด</h2>${profiles.map(t=>`<div class="aw-person-row">${t.photo_url?`<img src="${esc(t.photo_url)}" alt="">`:'<span class="aw-avatar">T</span>'}<div><strong>${esc(t.display_name)}</strong><small>${esc(t.role)} · ${esc(t.subjects)}</small></div><button type="button" class="btn soft" data-aw-edit-tutor="${esc(t.id)}">แก้ไข</button></div>`).join('')||'<p class="empty">ยังไม่มีผู้สอน</p>'}</section>`;}
 let awEditingTutor='';
 function awValidUrl(v){if(!v)return true;try{const u=new URL(v);return u.protocol==='https:'&&u.username===''&&u.password==='';}catch{return false;}}
-async function awAdminSubmit(e){if(e.target.id==='aw-admin-chat-form'){e.preventDefault();const body=e.target.elements.body.value.trim();if(!awSelectedStudent||!body||body.length>1000)return;const to=byId('Students',awSelectedStudent);if(!to)throw Error('ไม่พบนักเรียน');const m={id:uuid(),student_id:awSelectedStudent,sender:'tutor',sender_name:'AreWarin Tutor',body,read_at:'',created_at:now()};await commit({add:{ChatMessages:[m],PortalNotifications:[awNotice(awSelectedStudent,'ข้อความใหม่จากผู้สอน',body.length>90?body.slice(0,90)+'…':body)],Audit:[saveAudit('tutor_chat_sent',m.id,{studentId:awSelectedStudent})]}});toast('ส่งข้อความแล้ว');return;}
+async function awAdminSubmit(e){if(e.target.id==='aw-admin-chat-form'){e.preventDefault();if(state.busy)return;const sendButton=e.target.querySelector('button[type=submit],button:not([type])');if(sendButton){sendButton.disabled=true;sendButton.textContent='กำลังส่งข้อความ…';}const body=e.target.elements.body.value.trim();if(!awSelectedStudent||!body||body.length>1000){if(sendButton){sendButton.disabled=false;sendButton.textContent='ส่งข้อความ';}return;}const to=byId('Students',awSelectedStudent);if(!to)throw Error('ไม่พบนักเรียน');const m={id:uuid(),student_id:awSelectedStudent,sender:'tutor',sender_name:'AreWarin Tutor',body,read_at:'',created_at:now()};await commit({add:{ChatMessages:[m],PortalNotifications:[awNotice(awSelectedStudent,'ข้อความใหม่จากผู้สอน',body.length>90?body.slice(0,90)+'…':body)],Audit:[saveAudit('tutor_chat_sent',m.id,{studentId:awSelectedStudent})]}},{busyText:'กำลังส่งข้อความถึงนักเรียน…',fast:true});toast('ส่งข้อความแล้ว');return;}
 if(e.target.id==='aw-brand-form'){e.preventDefault();const b=all('PortalBranding')[0],name=document.getElementById('aw-studio-name').value.trim(),url=document.getElementById('aw-logo-url').value.trim();if(!awValidUrl(url)||!name)throw Error('ชื่อหรือ URL ภาพไม่ถูกต้อง (ใช้ HTTPS)');const item={id:b?.id||uuid(),studio_name:name,logo_url:url,updated_at:now()};await commit({[b?'update':'add']:{PortalBranding:[item]}});toast('บันทึกสตูดิโอแล้ว');return;}
 if(e.target.id==='aw-tutor-form'){e.preventDefault();const old=byId('TutorProfiles',awEditingTutor),name=document.getElementById('aw-tutor-name').value.trim(),role=document.getElementById('aw-tutor-role').value.trim(),subjects=document.getElementById('aw-tutor-subjects').value.trim(),photo=document.getElementById('aw-tutor-photo').value.trim();if(!name||!awValidUrl(photo))throw Error('กรุณาตรวจสอบชื่อและ URL ภาพ');const item={id:old?.id||uuid(),display_name:name,role,subjects,bio:document.getElementById('aw-tutor-bio').value.trim(),photo_url:photo,active:'yes',updated_at:now()};await commit({[old?'update':'add']:{TutorProfiles:[item]}});awEditingTutor='';toast('บันทึกโปรไฟล์ผู้สอนแล้ว');}}
 async function endLeave(id){const l=byId('LeaveRecords',id);if(!l||l.status!=='active')throw Error('สถานะการลาเปลี่ยนแล้ว กรุณารีเฟรช');const ok=window.Swal?await Swal.fire({title:'ยืนยันกลับมาเรียน?',text:'ปิดสถานะการลา โดยไม่เปลี่ยนชั่วโมงเรียน',icon:'question',showCancelButton:true,confirmButtonText:'ยืนยัน',cancelButtonText:'กลับ'}):{isConfirmed:confirm('ยืนยันกลับมาเรียน?')};if(!ok.isConfirmed)return;await commit({update:{LeaveRecords:[{...l,status:'ended',updated_at:now()}]},add:{PortalNotifications:[awNotice(l.student_id,'ยืนยันกลับมาเรียนแล้ว','ระบบบันทึกสถานะกลับมาเรียนเรียบร้อยแล้ว')],Audit:[saveAudit('leave_ended',l.id,{studentId:l.student_id})]}});toast('ยืนยันกลับมาเรียนเรียบร้อย');}
@@ -1705,7 +1785,47 @@ function awNotifyCourseModal(){modal('ส่งการแจ้งเตือ
 function awNotificationSuggestions(){const ss=all('Students').filter(s=>s.status==='active');return ss.flatMap(s=>{const low=liveCourses(s.id).filter(c=>!isHourly(c)&&balance(c.id)<=120);const due=all('Billing').filter(b=>b.student_id===s.id&&['unpaid','partial'].includes(b.status));return [...low.map(c=>({student:s,title:'คอร์สใกล้หมด',message:`${c.title} คงเหลือ ${nice(balance(c.id))} กรุณาติดต่อเพื่อวางแผนต่อคอร์ส` })),...(due.length?[{student:s,title:'แจ้งยอดค้างชำระ',message:`มียอดค้างชำระ ${baht(due.reduce((sum,b)=>sum+Math.max(0,Number(b.amount_satang||0)-all('Payments').filter(p=>p.billing_id===b.id).reduce((n,p)=>n+Number(p.amount_satang||0),0)),0))} (${due.length} รายการ) กรุณาตรวจสอบในเมนูชำระเงิน`}]:[])];});}
 /* delegated interactions; scoped to new screens */
 document.addEventListener('click',async e=>{const choice=e.target.closest('[data-aw-chat-student]');if(choice){awSelectedStudent=choice.dataset.awChatStudent;render();try{await awMarkAdminChat(awSelectedStudent);}catch(err){notice(err);}return;}const preset=e.target.closest('[data-aw-preset]');if(preset){const t=document.getElementById('aw-admin-chat-body');if(t){t.value=preset.dataset.awPreset;t.focus();}return;}const edit=e.target.closest('[data-aw-edit-tutor]');if(edit){awEditingTutor=edit.dataset.awEditTutor;render();return;}const notify=e.target.closest('[data-action="aw-notify-open"]');if(notify)awNotifyCourseModal();if(e.target.closest('[data-action="aw-chat-refresh"]')){await reload();return;}const suggest=e.target.closest('[data-aw-notify-suggest]');if(suggest){awNotifyCourseModal();document.getElementById('aw-notify-student').value=suggest.dataset.awNotifySuggest;document.getElementById('aw-notify-title').value=suggest.dataset.awNotifyTitle;document.getElementById('aw-notify-message').value=suggest.dataset.awNotifyMsg;}});
-document.addEventListener('submit',async e=>{if(!['aw-admin-chat-form','aw-brand-form','aw-tutor-form','aw-notify-form'].includes(e.target.id))return;e.preventDefault();e.stopImmediatePropagation();try{if(e.target.id==='aw-notify-form'){const sid=document.getElementById('aw-notify-student').value,title=document.getElementById('aw-notify-title').value.trim(),msg=document.getElementById('aw-notify-message').value.trim();if(!byId('Students',sid)||!title||!msg)throw Error('กรุณาตรวจสอบข้อมูล');await commit({add:{PortalNotifications:[awNotice(sid,title,msg)],Audit:[saveAudit('portal_notification_sent',sid,{title})]}});closeModal();toast('ส่งการแจ้งเตือนแล้ว');}else await awAdminSubmit(e);}catch(err){notice(err);}},true);
+document.addEventListener('submit',async e=>{if(!['aw-admin-chat-form','aw-brand-form','aw-tutor-form','aw-notify-form'].includes(e.target.id))return;e.preventDefault();e.stopImmediatePropagation();try{if(e.target.id==='aw-notify-form'){const sid=document.getElementById('aw-notify-student').value,title=document.getElementById('aw-notify-title').value.trim(),msg=document.getElementById('aw-notify-message').value.trim();if(!byId('Students',sid)||!title||!msg)throw Error('กรุณาตรวจสอบข้อมูล');await commit({add:{PortalNotifications:[awNotice(sid,title,msg)],Audit:[saveAudit('portal_notification_sent',sid,{title})]}});closeModal();toast('ส่งการแจ้งเตือนแล้ว');}else await awAdminSubmit(e);}catch(err){notice(err);}finally{if(e.target?.id==='aw-admin-chat-form'){const b=e.target.querySelector('button[type=submit],button:not([type])');if(b&&b.isConnected){b.disabled=false;b.textContent='ส่งข้อความ';}}}},true);
+
+/* v2.6.2 — admin near-live payment inbox sync; students do not sign in to Sheets. */
+let awSlipSyncRunning=false;
+let awLastSlipPoll=0;
+async function awSyncPortalRequests({quiet=false}={}){
+ if(awSlipSyncRunning||state.busy||state.mode!=='live'||!store?.request)return false;
+ if(document.visibilityState==='hidden')return false;
+ awSlipSyncRunning=true;
+ try{
+  const columnCount=SCHEMA.PortalRequests.length;
+  let n=columnCount,last='';
+  while(n>0){last=String.fromCharCode(65+(n-1)%26)+last;n=Math.floor((n-1)/26);}
+  const range=encodeURIComponent('PortalRequests!A2:'+last+'10000');
+  const result=await store.request('/values/'+range+'?valueRenderOption=UNFORMATTED_VALUE');
+  if(!Array.isArray(result.values)&&result.values!==undefined)throw Error('Google Sheets ส่งข้อมูลคำขอผิดรูปแบบ');
+  const next=(result.values||[]).filter(r=>r.some(v=>v!==''&&v!==null)).map(r=>obj('PortalRequests',r));
+  const old=new Set(all('PortalRequests').filter(r=>r.status==='pending'&&r.kind==='payment').map(r=>r.id));
+  const added=next.filter(r=>r.kind==='payment'&&r.status==='pending'&&!old.has(r.id));
+  state.data.PortalRequests=next;
+  awLastSlipPoll=Date.now();
+  if(state.view==='portal'||state.view==='notifications'){render();}
+  else awRefreshBadges();
+  if(added.length){
+   toast('ได้รับสลิปใหม่ '+added.length+' รายการ · ตรวจสอบได้ที่ Student Portal Manager → คำขอรออนุมัติ');
+  }else if(!quiet){toast('ตรวจสอบรายการจาก Google Sheets ล่าสุดแล้ว');}
+  return true;
+ }catch(err){
+  // Do not erase locally loaded requests when a network refresh fails.
+  console.warn('Portal request sync failed:',err?.message||err);
+  if(!quiet)notice(err);
+  return false;
+ }finally{awSlipSyncRunning=false;}
+}
+setInterval(()=>{
+ if(state.mode==='live'&&document.visibilityState==='visible')void awSyncPortalRequests({quiet:true});
+},45000);
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='visible'&&state.mode==='live'&&Date.now()-awLastSlipPoll>20000)void awSyncPortalRequests({quiet:true});
+});
+
 </script>
 </body>
 </html>
