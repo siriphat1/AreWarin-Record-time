@@ -105,3 +105,25 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .aw-tutors-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;margin-bottom:24px}.aw-tutors-row .aw-tutor-hero{margin:0}
 
 .aw-group-strip{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;background:#ebf4ed;border:1px solid #dcebdd;border-radius:17px;padding:18px 22px;margin:0 0 20px;color:#1d4b35}.aw-group-strip strong{display:flex;align-items:center;gap:8px;font-size:17px;margin:6px 0}.aw-group-strip p{margin:0;font-size:13px;color:#567663}.aw-profile-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:15px 0}.aw-profile-extra .btn{white-space:normal}
+
+/* v1.6.1 — accessible notifications & payment QR branding */
+.aw-notice-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.aw-notice-actions .btn{display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.aw-notice-actions .aw-clear-notices{color:#9d3f43;border-color:#edd3d3;background:#fff9f8}
+.aw-qr-hint{text-align:center;line-height:1.65;margin:4px 0 13px;color:#607a69}
+#qrcode.qr{min-height:244px;align-items:center;justify-content:center}
+.aw-qr-frame{position:relative;width:244px;height:244px;padding:10px;background:#fff;border:1px solid #e3ebe4;border-radius:15px;box-shadow:0 5px 24px rgba(18,65,42,.07);display:grid;place-items:center;overflow:hidden}
+.aw-qr-graphic{position:relative;width:224px;height:224px;display:grid;place-items:center}
+.aw-qr-graphic img,.aw-qr-graphic canvas{border:0!important;box-shadow:none!important;width:224px!important;height:224px!important;display:block!important}
+/* 34px mask on 224px QR is ~15% of side length; ECC H. */
+.aw-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;background:#fff;width:35px;height:35px;border-radius:6px;padding:4px;display:grid;place-items:center;box-shadow:0 0 0 2px #fff}
+.aw-qr-logo img{width:100%;height:100%;object-fit:contain;border:0!important;box-shadow:none!important;display:block}
+@media(max-width:430px){.aw-page-heading .aw-notice-actions{width:100%;justify-content:space-between}.aw-notice-actions .btn{font-size:12px}}
+
+/* v1.6.2 Payment slip upload: distinguish uploading from confirmed payment. */
+.aw-pay-upload-status{display:flex;align-items:center;gap:12px;border-radius:13px;padding:13px 15px;background:#eef6f0;border:1px solid #bedac8;color:#174631;font-size:13px;font-weight:700;min-height:54px;}
+.aw-pay-upload-status[hidden]{display:none!important}
+.aw-pay-upload-status .spinner{border:2px solid #b4d3c1;border-top-color:#174631;animation:aw-slip-spin .7s linear infinite;width:18px;height:18px;display:inline-block;border-radius:50%;flex:none}
+@keyframes aw-slip-spin{to{transform:rotate(360deg)}}
+#pay-submit-btn{margin-top:5px;min-height:50px}
+#pop[data-busy='1'] .modal{cursor:progress}
