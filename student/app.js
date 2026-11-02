@@ -196,7 +196,7 @@ function requestForm(kind,preCourse='',preAttendance=''){const d=app.data,withCo
 }
 function tlv(tag,str){return tag+String(str.length).padStart(2,'0')+str;}
 function promptPayPayload(id,satang){const digits=String(id).replace(/\D/g,'');let pp;if(digits.length===13)pp=tlv('02',digits);else if(digits.length===10&&digits.startsWith('0'))pp=tlv('01','0066'+digits.slice(1));else throw Error('รหัสพร้อมเพย์ไม่ถูกต้อง');const account=tlv('00','A000000677010111')+pp,amount=(Number(satang)/100).toFixed(2);let raw=tlv('00','01')+tlv('01','12')+tlv('29',account)+tlv('53','764')+tlv('54',amount)+tlv('58','TH')+'6304';let crc=65535;for(let i=0;i<raw.length;i++){crc^=raw.charCodeAt(i)<<8;for(let n=0;n<8;n++)crc=(crc&32768)?((crc<<1)^4129)&65535:(crc<<1)&65535;}return raw+crc.toString(16).toUpperCase().padStart(4,'0');}
-function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),bank=app.data.bank;if(!b)return;const remaining=b.amount-b.paid;if(remaining<=0)return message('ไม่มียอดค้าง');modal(`<h2>ชำระค่าคาบ</h2><div class="notice">${esc(b.course)} · ${thDate(b.date)}</div><div style="text-align:center;margin:15px 0"><div class="small">ยอดค้างชำระ</div><div class="metric">${price(remaining)}</div></div><form id="pay-form" class="form"><label>ยอดที่แจ้งชำระ (บาท)<input id="pay-amount" name="amountBaht" type="number" required min="0.01" max="${(remaining/100).toFixed(2)}" step="0.01" value="${(remaining/100).toFixed(2)}"></label><div id="qrcode" class="qr" aria-label="QR พร้อมเพย์สำหรับชำระเงิน"></div><p class="aw-qr-hint small">กรุณาตรวจชื่อผู้รับและยอดเงินในแอปธนาคารทุกครั้งก่อนยืนยันการโอน</p><div class="small" style="text-align:center">พร้อมเพย์ ${esc(bank.promptpayId)}<br>${esc(bank.recipientName)}<br>หรือโอนธนาคาร${esc(bank.bank)} ${esc(bank.bankAccount)}</div><label>แนบสลิปการโอน (PNG, JPG, PDF · ไม่เกิน 4 MB)<input id="slip" type="file" accept="image/jpeg,image/png,application/pdf" required></label><label>หมายเหตุ (ถ้ามี)<textarea name="note" maxlength="500"></textarea></label><div id="pay-upload-status" class="aw-pay-upload-status" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="pay-upload-stage">กำลังเตรียมสลิป...</span></div><button class="btn primary full" id="pay-submit-btn" type="submit">ส่งสลิปให้ตรวจสอบ</button></form><div class="notice warning" style="margin-top:12px">ระบบยังไม่ถือว่าชำระแล้ว จนกว่าผู้ดูแลตรวจสอบเงินเข้าบัญชีจริงและอนุมัติ</div>`);
+function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),bank=app.data.bank;if(!b)return;const remaining=b.amount-b.paid;if(remaining<=0)return message('ไม่มียอดค้าง');modal(`<h2>ชำระค่าคาบ</h2><div class="notice">${esc(b.course)} · ${thDate(b.date)}</div><div style="text-align:center;margin:15px 0"><div class="small">ยอดค้างชำระ</div><div class="metric">${price(remaining)}</div></div><form id="pay-form" class="form"><label>ยอดที่แจ้งชำระ (บาท)<input id="pay-amount" name="amountBaht" type="number" required min="0.01" max="${(remaining/100).toFixed(2)}" step="0.01" value="${(remaining/100).toFixed(2)}"></label><div id="qrcode" class="qr" aria-label="QR พร้อมเพย์สำหรับชำระเงิน"></div><p class="aw-qr-hint small">กรุณาตรวจชื่อผู้รับและยอดเงินในแอปธนาคารทุกครั้งก่อนยืนยันการโอน</p><div class="small" style="text-align:center">พร้อมเพย์ ${esc(bank.promptpayId)}<br>${esc(bank.recipientName)}<br>หรือโอนธนาคาร${esc(bank.bank)} ${esc(bank.bankAccount)}</div><label>แนบสลิปการโอน (PNG, JPG, PDF · ไม่เกิน 4 MB)<input id="slip" type="file" accept="image/jpeg,image/png,application/pdf" required></label><label>หมายเหตุ (ถ้ามี)<textarea name="note" maxlength="500"></textarea></label><div id="pay-upload-status" class="aw-pay-upload-status" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="pay-upload-stage">กำลังเตรียมสลิป...</span></div><button class="btn primary full" id="pay-submit-btn" type="submit">ส่งสลิปให้ตรวจสอบ</button></form><div class="notice warning" style="margin-top:12px">ระบบยังไม่ถือว่าชำระแล้ว จนกว่าผู้ดูแลตรวจสอบเงินเข้าบัญชีจริงและอนุมัติ</div><div class="aw-slip-cover" id="aw-slip-cover" hidden role="status" aria-live="polite" aria-label="สถานะการส่งสลิป"><div class="aw-slip-cover-card"><span class="aw-slip-cover-spinner" aria-hidden="true"></span><strong id="aw-slip-cover-title">กำลังส่งสลิป…</strong><p>อย่าปิดหน้านี้จนกว่าระบบจะตอบกลับ เพื่อป้องกันการส่งซ้ำ</p></div></div>`);
  function qr(){const amount=Math.round(Number($('#pay-amount').value||0)*100),el=$('#qrcode');el.innerHTML='';if(!amount||amount>remaining){el.textContent='ตรวจสอบยอดเงิน';return;}try{const payload=promptPayPayload(bank.promptpayId,amount);if(window.QRCode){
    // Use high-error-correction QR and reserve a small blank central area.
    // Keep the three QR finder corners and the quiet zone unobstructed.
@@ -219,12 +219,12 @@ function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),ban
   if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)>remaining){
    await dialog({icon:'warning',title:'ยอดที่แจ้งชำระไม่ถูกต้อง',text:'กรุณาตรวจสอบยอดเงินก่อนส่ง'});return;
   }
-  const modalRoot=$('#pop'),button=$('#pay-submit-btn'),status=$('#pay-upload-status'),stage=$('#pay-upload-stage');
+  const modalRoot=$('#pop'),button=$('#pay-submit-btn'),status=$('#pay-upload-status'),stage=$('#pay-upload-stage'),cover=$('#aw-slip-cover'),coverTitle=$('#aw-slip-cover-title');
   if(!modalRoot||modalRoot.dataset.busy==='1')return;
   modalRoot.dataset.busy='1';
   button.disabled=true;$('#popclose').disabled=true;
-  status.hidden=false;
-  const phase=t=>{if(stage)stage.textContent=t;if(button)button.textContent=t;};
+  status.hidden=false;if(cover)cover.hidden=false;
+  const phase=t=>{if(stage)stage.textContent=t;if(button)button.textContent=t;if(coverTitle)coverTitle.textContent=t;};
   try{
    phase('กำลังอ่านไฟล์สลิป…');
    const base64=await new Promise((resolve,reject)=>{
@@ -235,7 +235,7 @@ function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),ban
    });
    phase('กำลังอัปโหลดสลิปและบันทึกคำขอ…');
    const payload={billingId:billId,amountBaht:amount,mime:file.type,base64,note:form.elements.note.value};
-   let receipt;
+   let receipt;let legacyEndpoint=false;
    try{
     // Preferred API: creates the payment request and a student acknowledgement.
     receipt=await rpc('awSubmitPaymentSlipV2',app.token,payload);
@@ -243,21 +243,22 @@ function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),ban
     // Legacy endpoints can still save a payment request. Never retry a potentially
     // accepted upload on a timeout, 5xx, or uncertain network error.
     if(!/^(Bad request|Method not allowed|Unknown AreWarin extension method|Unknown method|คำสั่งไม่ได้รับอนุญาต)/i.test(String(error?.message||'')))throw error;
-    receipt=await rpc('submitPaymentSlip',app.token,payload);
+    legacyEndpoint=true;receipt=await rpc('submitPaymentSlip',app.token,payload);
    }
    if(!receipt||!receipt.id||receipt.status!=='pending')throw Error('ไม่พบเลขอ้างอิงการส่งสลิปจากระบบ กรุณาตรวจสอบสถานะก่อนส่งใหม่');
    phase('ระบบรับสลิปแล้ว · กำลังอัปเดตสถานะ…');
    const stamp=new Date().toISOString();
    if(!app.data.requests.some(r=>r.id===receipt.id))app.data.requests.unshift({id:receipt.id,kind:'payment',status:'pending',courseId:b.courseId,amount:Math.round(amount*100),createdAt:stamp});
-   modalRoot.remove();app.view='payments';render();
+   if(cover)cover.hidden=true;modalRoot.remove();app.view='payments';render();
    // Success is confirmed from API response; reloading must not turn it into a failed upload.
    void (async()=>{try{const fresh=await rpc('getMyData',app.token);if(fresh&&app.token){app.data=fresh;if(app.view==='payments')render();}}catch(err){console.warn('Slip accepted; payment list refresh pending',err?.message||err);}})();
-   await dialog({icon:'success',title:'ส่งสลิปสำเร็จ',html:`<p>ระบบรับหลักฐานแล้ว และส่งให้ผู้ดูแลตรวจสอบ</p><p><strong>สถานะ: รอตรวจสอบ</strong></p><p style="font-size:12px;overflow-wrap:anywhere">เลขอ้างอิง: ${esc(receipt.id)}</p><p style="font-size:12px;color:#71847a">ยังไม่ถือว่าชำระแล้วจนกว่าผู้ดูแลจะตรวจสอบเงินเข้าจริง</p>`,confirmButtonText:'เรียบร้อย'});
+   const attention=legacyEndpoint||receipt.adminVisible===false;
+   await dialog({icon:attention?'warning':'success',title:attention?'รับสลิปแล้ว · ต้องตรวจการเชื่อมต่อ':'ส่งสลิปสำเร็จ',html:`<p>ระบบรับหลักฐานการโอนแล้ว</p><p><strong>สถานะ: รอตรวจสอบ</strong></p><p style="font-size:12px;overflow-wrap:anywhere">เลขอ้างอิง: ${esc(receipt.id)}</p>${attention?'<p style="color:#915b24">ระบบแจ้งเตือนผู้ดูแลอาจยังไม่เชื่อมครบ กรุณาให้ผู้ดูแลตรวจเลขอ้างอิงนี้ใน Tutor OS / Google Sheets ก่อนส่งซ้ำ</p>':''}<p style="font-size:12px;color:#71847a">ยังไม่ถือว่าชำระแล้วจนกว่าผู้ดูแลจะตรวจสอบเงินจริง</p>`,confirmButtonText:'เรียบร้อย'});
   }catch(err){
    // A lost response does not imply that the backend rejected the slip.
    await dialog({icon:'warning',title:'ยังยืนยันผลการส่งไม่ได้',text:String(err?.message||'ระบบอาจได้รับสลิปแล้ว กรุณารีเฟรชรายการที่แจ้งชำระก่อนส่งซ้ำ'),confirmButtonText:'รับทราบ'});
   }finally{
-   if(modalRoot?.isConnected){modalRoot.dataset.busy='0';button.disabled=false;$('#popclose').disabled=false;status.hidden=true;button.textContent='ส่งสลิปให้ตรวจสอบ';}
+   if(cover)cover.hidden=true;if(modalRoot?.isConnected){modalRoot.dataset.busy='0';button.disabled=false;$('#popclose').disabled=false;status.hidden=true;button.textContent='ส่งสลิปให้ตรวจสอบ';}
   }
  };
 }
