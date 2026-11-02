@@ -235,16 +235,9 @@ function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),ban
    });
    phase('กำลังอัปโหลดสลิปและบันทึกคำขอ…');
    const payload={billingId:billId,amountBaht:amount,mime:file.type,base64,note:form.elements.note.value};
-   let receipt;let legacyEndpoint=false;
-   try{
-    // Preferred API: creates the payment request and a student acknowledgement.
-    receipt=await rpc('awSubmitPaymentSlipV2',app.token,payload);
-   }catch(error){
-    // Legacy endpoints can still save a payment request. Never retry a potentially
-    // accepted upload on a timeout, 5xx, or uncertain network error.
-    if(!/^(Bad request|Method not allowed|Unknown AreWarin extension method|Unknown method|คำสั่งไม่ได้รับอนุญาต)/i.test(String(error?.message||'')))throw error;
-    legacyEndpoint=true;receipt=await rpc('submitPaymentSlip',app.token,payload);
-   }
+   // Financial API is versioned deliberately: never silently post a slip using
+   // a legacy route that might save in a different spreadsheet.
+   const receipt=await rpc('awSubmitPaymentSlipV2',app.token,payload);
    if(!receipt||!receipt.id||receipt.status!=='pending')throw Error('ไม่พบเลขอ้างอิงการส่งสลิปจากระบบ กรุณาตรวจสอบสถานะก่อนส่งใหม่');
    phase('ระบบรับสลิปแล้ว · กำลังอัปเดตสถานะ…');
    const stamp=new Date().toISOString();
@@ -252,11 +245,23 @@ function paymentForm(billId){const b=app.data.billing.find(x=>x.id===billId),ban
    if(cover)cover.hidden=true;modalRoot.remove();app.view='payments';render();
    // Success is confirmed from API response; reloading must not turn it into a failed upload.
    void (async()=>{try{const fresh=await rpc('getMyData',app.token);if(fresh&&app.token){app.data=fresh;if(app.view==='payments')render();}}catch(err){console.warn('Slip accepted; payment list refresh pending',err?.message||err);}})();
-   const attention=legacyEndpoint||receipt.adminVisible===false;
+   const attention=receipt.adminVisible===false;
    await dialog({icon:attention?'warning':'success',title:attention?'รับสลิปแล้ว · ต้องตรวจการเชื่อมต่อ':'ส่งสลิปสำเร็จ',html:`<p>ระบบรับหลักฐานการโอนแล้ว</p><p><strong>สถานะ: รอตรวจสอบ</strong></p><p style="font-size:12px;overflow-wrap:anywhere">เลขอ้างอิง: ${esc(receipt.id)}</p>${attention?'<p style="color:#915b24">ระบบแจ้งเตือนผู้ดูแลอาจยังไม่เชื่อมครบ กรุณาให้ผู้ดูแลตรวจเลขอ้างอิงนี้ใน Tutor OS / Google Sheets ก่อนส่งซ้ำ</p>':''}<p style="font-size:12px;color:#71847a">ยังไม่ถือว่าชำระแล้วจนกว่าผู้ดูแลจะตรวจสอบเงินจริง</p>`,confirmButtonText:'เรียบร้อย'});
   }catch(err){
-   // A lost response does not imply that the backend rejected the slip.
-   await dialog({icon:'warning',title:'ยังยืนยันผลการส่งไม่ได้',text:String(err?.message||'ระบบอาจได้รับสลิปแล้ว กรุณารีเฟรชรายการที่แจ้งชำระก่อนส่งซ้ำ'),confirmButtonText:'รับทราบ'});
+   // Recover a possibly persisted receipt with a READ-ONLY authenticated query.
+   // Do not automatically upload again: the first request may have succeeded.
+   let receipt=null;
+   const notDeployed=/API ยังไม่เปิดคำสั่ง awSubmitPaymentSlipV2|Apps Script ยังไม่รองรับคำสั่ง awSubmitPaymentSlipV2/.test(String(err?.message||''));
+   if(!notDeployed)try{receipt=await rpc('awGetPaymentStatus',app.token,billId);}catch(checkError){
+    console.warn('Payment reconciliation query unavailable:',checkError?.message||checkError);
+   }
+   if(receipt?.found&&receipt.hasFile){
+    if(cover)cover.hidden=true;if(modalRoot?.isConnected)modalRoot.remove();
+    app.view='payments';render();
+    await dialog({icon:'warning',title:'พบสลิปที่ระบบรับไว้แล้ว',html:`<p>สถานะ: <b>${esc(receipt.status)}</b></p><p>เลขอ้างอิง: <b>${esc(receipt.id)}</b></p><p>กรุณาอย่าส่งซ้ำ และให้ผู้ดูแลตรวจสอบเลขอ้างอิงนี้</p>`,confirmButtonText:'รับทราบ'});
+   }else{
+    await dialog({icon:'warning',title:'ยังยืนยันผลการส่งไม่ได้',text:'ไม่สามารถยืนยันว่าบันทึกสลิปแล้ว: '+String(err?.message||'ระบบอาจได้รับสลิปแล้ว')+' กรุณาตรวจรายการเดิมหรือแจ้งผู้ดูแลก่อนส่งซ้ำ',confirmButtonText:'รับทราบ'});
+   }
   }finally{
    if(cover)cover.hidden=true;if(modalRoot?.isConnected){modalRoot.dataset.busy='0';button.disabled=false;$('#popclose').disabled=false;status.hidden=true;button.textContent='ส่งสลิปให้ตรวจสอบ';}
   }

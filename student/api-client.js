@@ -3,7 +3,7 @@
 'use strict';
 const PortalBridge = (()=>{
  const endpoint = String(window.STUDENT_CONFIG?.apiEndpoint||'').trim();
- const allowed = new Set(['appConfig','registerPhonePin','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip','awSubmitPaymentSlipV2','awGetExtras','awSendChat','awMarkNotice','awClearNotices','awLoginWithData']);
+ const allowed = new Set(['appConfig','registerPhonePin','loginStudent','logoutStudent','getMyData','submitPortalRequest','submitPaymentSlip','awSubmitPaymentSlipV2','awGetPaymentStatus','awGetExtras','awSendChat','awMarkNotice','awClearNotices','awLoginWithData']);
  const status=()=>document.getElementById('connection-status');
  const setStatus=(value,isError=false)=>{const el=status();if(!el)return;el.textContent=value;el.classList.toggle('offline',isError);el.classList.toggle('idle',!isError&&value==='พร้อมเชื่อมต่อ');el.classList.toggle('connected',!isError&&value==='พร้อมใช้งาน');};
  let url;
@@ -32,10 +32,10 @@ const PortalBridge = (()=>{
    }
    let out;
    try{out=await res.json();}catch{setStatus('API ตอบกลับผิดรูปแบบ',true);throw Error('API ส่งข้อมูลตอบกลับไม่ถูกต้อง ตรวจการ Deploy Apps Script');}
-   if(!res.ok){setStatus('API ตอบกลับผิดพลาด',true);const msg=String(out?.error||'เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+res.status+')');throw Error(/Method not allowed/i.test(msg)?'ระบบแชทยังไม่ได้เปิดบน API: อัปเดต Worker และ doPost(e) ใน Apps Script':msg);}
+   if(!res.ok){setStatus('API ตอบกลับผิดพลาด',true);const msg=String(out?.error||'เซิร์ฟเวอร์ตอบกลับผิดพลาด ('+res.status+')');throw Error(/Method not allowed|Bad request/i.test(msg)?'API ยังไม่เปิดคำสั่ง '+name+' (ตรวจ Worker และ Apps Script deployment)':msg);}
    // A rejected student code/invite/PIN is an AUTH error, NOT an API outage.
    setStatus('พร้อมใช้งาน',false);
-   if(!out?.ok){const msg=String(out?.error||'ไม่สามารถดำเนินการได้');throw Error(/Method not allowed|Unknown method/i.test(msg)?'Apps Script ยังไม่ได้เปิดคำสั่งแชท: เพิ่ม awGetExtras ใน doPost(e) แล้ว Deploy New version':msg);}
+   if(!out?.ok){const msg=String(out?.error||'ไม่สามารถดำเนินการได้');throw Error(/Method not allowed|Unknown method|Unknown AreWarin extension method/i.test(msg)?'Apps Script ยังไม่รองรับคำสั่ง '+name+' — ตรวจ doPost(e), PortalExtension.gs และ Deploy New version':msg);}
    return out.result;
   }catch(e){throw e;}
   finally{clearTimeout(tid);}
