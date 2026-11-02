@@ -53,6 +53,10 @@ body.theme-dark .pm-page{color:#e1eee5}body.theme-dark .pm-metric,body.theme-dar
 body.theme-dark .aw-slip-inbox{background:#1b2923;border-color:#364b3f}
 body.theme-dark .aw-slip-inbox h2,body.theme-dark .aw-slip-row strong,body.theme-dark .aw-slip-row .aw-slip-amount{color:#e4efe8}
 @media(max-width:730px){.aw-slip-inbox{padding:16px}.aw-slip-row{align-items:flex-start;flex-direction:column}.aw-slip-row .aw-slip-buttons{justify-content:flex-start}}
+
+/* v2.7.1: payment reconciliation / data-source verification */
+.aw-slip-source{margin:10px 0 14px;display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;background:#f4f8f3;border-radius:12px;border:1px solid #e2eae0;padding:11px 13px;color:#446452;font-size:11px}
+.aw-slip-source b{color:#173f2e;font-variant-numeric:tabular-nums}.aw-slip-source a{color:#216849;text-decoration:underline;text-underline-offset:3px;font-weight:700}.aw-slip-source small{flex-basis:100%;line-height:1.6}
 </style>
   <script src="config.js"></script>
   <script defer src="https://accounts.google.com/gsi/client"></script>
@@ -878,6 +882,7 @@ function awSlipInboxPanel(){
   <div class="aw-slip-inbox-head"><div><h2 id="aw-slip-title">สลิปโอนเงินที่รอตรวจสอบ ${requests.length?`(${requests.length})`:''}</h2><p class="aw-slip-sub">รายการจาก Student Portal · ตรวจหลักฐานและเงินเข้าบัญชีก่อนอนุมัติ</p></div>
   <div class="aw-slip-actions"><span class="aw-slip-status ${error?'error':''}" id="aw-slip-sync-indicator">${esc(awSlipSyncLabel())}</span><button type="button" class="btn soft" data-action="portal-refresh-requests">↻ ตรวจสลิปล่าสุด</button><button type="button" class="btn primary" data-action="portal-open-inbox">เปิด Approval Inbox</button></div></div>
   ${error?`<div class="aw-slip-error" role="alert">อ่านรายการสลิปจาก Google Sheets ไม่สำเร็จ: ${esc(awSlipSyncState.error)}<br>รายการที่เห็นอาจเป็นข้อมูลเก่า กรุณาตรวจสิทธิ์บัญชีและ Spreadsheet ID</div>`:''}
+  ${state.mode==='live'?`<div class="aw-slip-source" role="note"><span>ฐานข้อมูล Tutor OS: <b>${esc(String(config.spreadsheetId||'').slice(-8)||'ไม่พบรหัส')}</b></span> <a href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(config.spreadsheetId)}/edit" target="_blank" rel="noopener noreferrer">เปิด Google Sheets ที่ผู้ดูแลเชื่อม</a><small>ถ้านักเรียนเห็น “รอตรวจสอบ” แต่ไม่มีสลิป ให้ตรวจว่าค่า AW_SPREADSHEET_ID ใน Apps Script เป็นไฟล์เดียวกัน</small></div>`:''}
   ${requests.length?requests.slice(0,12).map(r=>`<article class="aw-slip-row"><div><strong>${esc(studentName(r.student_id))}</strong><small>${esc(byId('Courses',r.course_id)?.title||'คอร์สไม่ระบุ')} · ${esc(String(r.created_at||'').replace('T',' ').slice(0,19))}</small><small class="aw-slip-amount">${esc(baht(Number(r.amount_satang)||0))}</small></div><div class="aw-slip-buttons">${r.slip_file_id?`<button type="button" class="btn soft" data-action="portal-slip" data-id="${esc(r.slip_file_id)}">ดูสลิป</button>`:'<span class="aw-slip-status error">ไม่พบไฟล์สลิป</span>'}<button type="button" class="btn primary" data-action="portal-approve" data-id="${esc(r.id)}">ตรวจและอนุมัติ</button><button type="button" class="btn soft" data-action="portal-reject" data-id="${esc(r.id)}">ปฏิเสธ</button></div></article>`).join(''):
    `<div class="aw-slip-empty">${error?'ไม่สามารถยืนยันได้ว่ามีสลิปใหม่หรือไม่':!ready?'กด “ตรวจสลิปล่าสุด” เพื่ออ่านข้อมูลจาก Google Sheets': 'ยังไม่มีรายการสลิปสถานะรอตรวจสอบใน Spreadsheet ที่ Tutor OS เชื่อมอยู่'}${ready?' · หากนักเรียนเห็น “รอตรวจสอบ” แต่ไม่มีรายการที่นี่ ให้ตรวจว่า Apps Script กับ Tutor OS ใช้ Spreadsheet ID เดียวกัน':''}</div>`}
   ${requests.length>12?`<p class="aw-slip-sub">ยังมีอีก ${requests.length-12} รายการ · กดเปิด Approval Inbox เพื่อดูทั้งหมด</p>`:''}
@@ -1883,7 +1888,7 @@ async function awSyncPortalRequests({quiet=false}={}){
   awSlipSyncState={phase:'ready',lastAt:awLastSlipPoll,total:next.length,error:''};
   if(['portal','notifications','billing'].includes(state.view))render();
   else awRefreshBadges();
-  if(added.length)toast('มีสลิปใหม่ '+added.length+' รายการ · เปิดตรวจสอบจากหน้าการเงินได้ทันที');
+  if(added.length){toast('มีสลิปใหม่ '+added.length+' รายการ · เปิดตรวจสอบจากหน้าการเงินได้ทันที');if(window.Swal&&document.visibilityState==='visible')Swal.fire({toast:true,position:'top-end',icon:'info',title:'ได้รับสลิปใหม่ '+added.length+' รายการ',timer:5000,timerProgressBar:true,showConfirmButton:false});}
   else if(!quiet)toast('ซิงก์ PortalRequests แล้ว · '+next.filter(r=>r.status==='pending'&&r.kind==='payment').length+' สลิปรอตรวจ');
   return true;
  }catch(err){
@@ -1898,14 +1903,14 @@ async function awSyncPortalRequests({quiet=false}={}){
 }
 setInterval(()=>{
  if(state.mode==='live'&&document.visibilityState==='visible')void awSyncPortalRequests({quiet:true});
-},45000);
+},20000);
 document.addEventListener('visibilitychange',()=>{
  if(document.visibilityState==='visible'&&state.mode==='live'&&Date.now()-awLastSlipPoll>20000)void awSyncPortalRequests({quiet:true});
 });
 
 
 /* ================================================================
-   AreWarin Course Catalog v2.7: catalog -> sections -> enrollment
+   AreWarin Course Catalog v2.7.1: catalog -> sections -> enrollment
    Keeps original student Courses / Ledger untouched until enrollment.
    ================================================================ */
 const courseV27SafeUrl=url=>{try{const x=new URL(String(url||''));return x.protocol==='https:'?x.href:'';}catch{return '';}};
