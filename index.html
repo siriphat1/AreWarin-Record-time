@@ -93,7 +93,7 @@ body.theme-dark .parent-report .aw-report-month-breakdown{background:#1e3026;bor
 @media(max-width:720px){.parent-report .aw-report-toolbar{padding:2px 14px 15px}.parent-report .aw-report-detail{padding:10px 14px}.parent-report .aw-report-month-breakdown{margin:0 14px 15px}.parent-report .parent-report-actions{padding:12px 14px 19px}}
 </style>
 <style id="aw-import-archive-v273">
-/* v2.7.3: managed Google Meet import archive / safe duplicate reset */
+/* v2.7.4: managed Google Meet archive + reviewed duplicate replacement */
 .aw-import-archive{margin:20px 0;background:#fff;border:1px solid #dce8df;border-radius:18px;padding:22px;box-shadow:0 7px 25px rgba(20,58,44,.035)}
 .aw-import-archive h2{font-size:18px;color:#193f30;margin:0 0 7px}.aw-import-archive p{font-size:12px;color:#708678;line-height:1.8;margin:0}
 .aw-import-archive-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.aw-import-archive-tools{margin:17px 0 12px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
@@ -107,6 +107,20 @@ body.theme-dark .parent-report .aw-report-month-breakdown{background:#1e3026;bor
 .aw-import-delete-agree{display:flex;gap:10px;align-items:flex-start;margin-top:20px;line-height:1.8;font-size:12px}.aw-import-delete-agree input{width:18px;height:18px;margin-top:3px;accent-color:#9c3032;flex-shrink:0}
 body.theme-dark .aw-import-archive{background:#1b2923;border-color:#364b3f}body.theme-dark .aw-import-archive h2,body.theme-dark .aw-import-archive-info strong{color:#e8f4e8}
 @media(max-width:680px){.aw-import-archive{padding:16px}.aw-import-archive-row{align-items:flex-start;flex-direction:column}.aw-import-archive-actions{align-self:flex-start}.aw-import-archive-tools input{min-width:0;width:100%}}
+/* Reviewed import replacement: don't silently overwrite an existing class. */
+.aw-replace-box{margin-top:7px;padding:10px;border:1px solid #e6d8ac;border-radius:10px;background:#fffaf0;max-width:320px}
+.aw-replace-box label{display:block;color:#8a6223;font-weight:750;font-size:11px;margin-bottom:5px}
+.aw-replace-box select{display:block;width:100%;min-width:0;border:1px solid #d9c899;border-radius:8px;padding:8px;background:#fff;color:#463a24;font-size:11px}
+.aw-replace-box small{display:block;font-size:10px;margin-top:6px;line-height:1.55;color:#846f3b}
+.aw-replace-summary{margin:12px 0 17px;border:1px solid #e2dac0;border-radius:12px;background:#fffdf6;padding:14px}
+.aw-replace-summary h4{margin:0 0 8px;font-size:14px;color:#715023}
+.aw-replace-summary .aw-replace-heading{margin:10px 0 7px;font-size:12px;line-height:1.6}
+.aw-replace-summary table{border-collapse:collapse;width:100%;font-size:11px}
+.aw-replace-summary th,.aw-replace-summary td{border:1px solid #e2e2d8;padding:7px;vertical-align:top;text-align:left}
+.aw-replace-summary th{background:#f9f5e9}
+.aw-replace-summary .aw-replace-scroller{overflow-x:auto}
+body.theme-dark .aw-replace-box,body.theme-dark .aw-replace-summary{background:#262b22;border-color:#726345}
+@media(max-width:720px){.aw-replace-box{max-width:none}.aw-replace-summary{padding:11px}}
 </style>
 </head>
 <body>
@@ -273,9 +287,9 @@ function showBusy(message='กำลังบันทึกข้อมูล�
 }
 function hideBusy(){if(loadingCount>0)loadingCount--;if(!loadingCount){if(window.Swal&&window.Swal.isVisible())window.Swal.close();document.getElementById?.('aw-loading')?.setAttribute?.('hidden','');}}
 function activeAttendanceRows(sessionId){return all('Attendance').filter(a=>a.session_id===sessionId&&a.status!=='cancelled');}
-function ensureBalanceForRows(rows){const totals=new Map();for(const r of rows){const id=r.course_id||r.courseId,minutes=Number(r.deduct_minutes??r.minutes);if(!id||!Number.isInteger(minutes)||minutes<0)throw Error('คอร์สหรือระยะเวลาไม่ถูกต้อง');if(!isHourly(byId('Courses',id)))totals.set(id,(totals.get(id)||0)+minutes);}for(const [id,needed] of totals){if(balance(id)<needed)throw Error('ชั่วโมงของ '+studentName(byId('Courses',id)?.student_id)+' ไม่พอ: ต้องตัด '+nice(needed)+' แต่คงเหลือ '+nice(balance(id)));}}
+function ensureBalanceForRows(rows,credits=new Map()){const totals=new Map();for(const r of rows){const id=r.course_id||r.courseId,minutes=Number(r.deduct_minutes??r.minutes);if(!id||!Number.isInteger(minutes)||minutes<0)throw Error('คอร์สหรือระยะเวลาไม่ถูกต้อง');if(!isHourly(byId('Courses',id)))totals.set(id,(totals.get(id)||0)+minutes);}for(const [id,needed] of totals){if(balance(id)+(credits.get(id)||0)<needed)throw Error('ชั่วโมงของ '+studentName(byId('Courses',id)?.student_id)+' ไม่พอ: ต้องตัด '+nice(needed)+' แต่คงเหลือหลังคืนยอดเดิม '+nice(balance(id)+(credits.get(id)||0)));}}
 function duplicateActiveStudent(date,id,start,end){return duplicateAttendance(date,id,start,end);}
-function clearImportWorkspace(){Object.assign(state,{importQueue:[],importDrafts:[],importErrors:[],importDone:[],importIndex:0,importDraft:null,batchIncluded:{},bulkScope:'current',bulkClass:'keep',bulkBasis:'keep',bulkMinutes:'',importIssueOnly:false,importDateEditing:null});}
+function clearImportWorkspace(){Object.assign(state,{importQueue:[],importDrafts:[],importReplaceChoices:{},importErrors:[],importDone:[],importIndex:0,importDraft:null,batchIncluded:{},bulkScope:'current',bulkClass:'keep',bulkBasis:'keep',bulkMinutes:'',importIssueOnly:false,importDateEditing:null});}
 function sessionStatusText(status){return status==='approved'?'บันทึกและตัดแล้ว':status==='pending'?'ค้างจากรุ่นเก่า (ยังไม่ตัด)':status==='cancelled'?'ยกเลิก / คืนชั่วโมง':'ไม่ทราบสถานะ';}
 function toast(msg,error=false){const el=$('#toast-root');el.innerHTML=`<div class="toast ${error?'error':''}">${esc(msg)}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},4300);}
 function modal(title,body,footer='',wide=false){$('#modal-root').innerHTML=`<div class="overlay" id="overlay"><div class="modal ${wide?'modal-wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-top"><h2 class="modal-title">${esc(title)}</h2><button class="xbtn" data-close>×</button></div><div class="modal-body">${body}</div>${footer?`<div class="modal-footer">${footer}</div>`:''}</div></div>`;}
@@ -306,7 +320,7 @@ async function restoreGoogleSession(){if(!liveConfigured)return false;
  catch(err){clearGoogleSession();state.token='';store=new DemoStore();state.mode='needs_login';render();console.warn('Session could not be restored:',err?.message||err);return false;}
 }
 
-const state={scheduleLayout:safeStorage('local','get','awtutor_schedule_layout_v1')==='table'?'table':'week',scheduleWeek:'',view:'dashboard',data:{},mode:liveConfigured?'needs_login':'setup_required',token:'',tokenClient:null,studentId:'',showArchive:false,showDeleted:false,studentLayout:'cards',studentGradeFilter:'all',studentStatusFilter:'all',importQueue:[],importDrafts:[],importErrors:[],importDone:[],importLoading:false,importIndex:0,importDraft:null,importIssueOnly:false,importCurrentOnly:false,importDateEdit:false,importDateEditing:null,importTimeEditing:null,reconcileMonth:dateNow().slice(0,7),reconcileStudent:'',financeMonth:dateNow().slice(0,7),timelineStudent:'',historyTutor:'',historyStudent:'',historyGroup:'',historyCourse:'',historyStatus:'all',historyFrom:'',historyTo:'',historyLayout:'table',personalCalendarMonth:dateNow().slice(0,7),personalCalendarDay:'',reportStudent:'',reportPeriod:'all',reportMonth:dateNow().slice(0,7),reportFrom:'',reportTo:'',reportCourse:'',bulkScope:'current',bulkClass:'keep',bulkBasis:'keep',bulkMinutes:'',bulkRemember:false,batchIncluded:{},reviewSelection:[],search:'',filter:'all',busy:false};
+const state={scheduleLayout:safeStorage('local','get','awtutor_schedule_layout_v1')==='table'?'table':'week',scheduleWeek:'',view:'dashboard',data:{},mode:liveConfigured?'needs_login':'setup_required',token:'',tokenClient:null,studentId:'',showArchive:false,showDeleted:false,studentLayout:'cards',studentGradeFilter:'all',studentStatusFilter:'all',importQueue:[],importDrafts:[],importReplaceChoices:{},importErrors:[],importDone:[],importLoading:false,importIndex:0,importDraft:null,importIssueOnly:false,importCurrentOnly:false,importDateEdit:false,importDateEditing:null,importTimeEditing:null,reconcileMonth:dateNow().slice(0,7),reconcileStudent:'',financeMonth:dateNow().slice(0,7),timelineStudent:'',historyTutor:'',historyStudent:'',historyGroup:'',historyCourse:'',historyStatus:'all',historyFrom:'',historyTo:'',historyLayout:'table',personalCalendarMonth:dateNow().slice(0,7),personalCalendarDay:'',reportStudent:'',reportPeriod:'all',reportMonth:dateNow().slice(0,7),reportFrom:'',reportTo:'',reportCourse:'',bulkScope:'current',bulkClass:'keep',bulkBasis:'keep',bulkMinutes:'',bulkRemember:false,batchIncluded:{},reviewSelection:[],search:'',filter:'all',busy:false};
 function makeDemo(){
   const empty=Object.fromEntries(Object.keys(SCHEMA).map(k=>[k,[]]));
   const t=now(),ds=dateNow();
@@ -474,12 +488,12 @@ function summaryRowsTable(rows){
     return `<tr><td class="confirmation-date-cell"><time datetime="${esc(r.date)}"><strong>${esc(confirmationDate(r.date))}</strong><small>${esc(r.date)}</small>${r.dateSource?`<small>${esc(r.dateSource==='filename'?'จากชื่อไฟล์':r.dateSource==='excel'?'จาก Excel':r.dateSource==='manual'?'ระบุเอง':'ตรวจสอบวันที่')}</small>`:''}</time></td><td class="nowrap"><strong>${esc(r.timeRange||'—')}</strong></td><td><strong>${esc(r.student)}</strong><div class="td-secondary confirmation-file" title="${esc(r.source||'Manual')}">${esc(r.source||'Manual')}</div></td><td>${esc(r.course)}<div class="td-secondary">${esc(r.classLabel||'เรียนเดี่ยว')}</div></td><td>${esc(nice(r.actual))}</td><td><strong>${esc(nice(r.minutes))}</strong>${hourly?`<small>ค่าคาบ ${esc(baht(moneySatang(r.minutes,hourlyRate(c))))}</small>`:''}</td><td class="${!hourly&&after<0?'summary-negative':''}">${hourly?'รอชำระหลังบันทึก':`${esc(nice(before-prior))} → ${after<0?'-':''}${esc(nice(Math.abs(after)))}`}</td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
-function showSaveSummary(title,kind,rows,onConfirm,details=''){
+function showSaveSummary(title,kind,rows,onConfirm,details='',options={}){
   if(!rows.length)throw Error('ไม่มีรายการที่จะบันทึก');
   const days=summaryDateBreakdown(rows);
   // Always confirm every imported calendar date. Do not silently substitute today's date.
   const sorted=[...rows].sort((a,b)=>a.date.localeCompare(b.date)||String(a.timeRange||'').localeCompare(String(b.timeRange||''))||String(a.student).localeCompare(String(b.student),'th'));
-  const total=sorted.reduce((v,r)=>v+num(r.minutes),0);const usage=new Map();for(const r of sorted){if(isPackageCourse(r.courseId))usage.set(r.courseId,(usage.get(r.courseId)||0)+num(r.minutes));}const over=[...usage].filter(([id,n])=>id&&balance(id)<n);if(over.length)throw Error('ชั่วโมงคงเหลือไม่พอสำหรับรายการที่เลือก: '+over.map(([id,n])=>courseTitle(id)+' ต้องใช้ '+nice(n)+' เหลือ '+nice(balance(id))).join(' · '));
+  const credit=options.credits||new Map();const total=sorted.reduce((v,r)=>v+num(r.minutes),0);const usage=new Map();for(const r of sorted){if(isPackageCourse(r.courseId))usage.set(r.courseId,(usage.get(r.courseId)||0)+num(r.minutes));}const over=[...usage].filter(([id,n])=>id&&balance(id)+(credit.get(id)||0)<n);if(over.length)throw Error('ชั่วโมงคงเหลือไม่พอสำหรับรายการที่เลือก: '+over.map(([id,n])=>courseTitle(id)+' ต้องใช้ '+nice(n)+' เหลือหลังคืนยอดเดิม '+nice(balance(id)+(credit.get(id)||0))).join(' · '));
   const range=days.length===1?confirmationDate(days[0].date):`${confirmationDate(days[0].date)} – ${confirmationDate(days[days.length-1].date)}`;
   // Store the pending action only after validating all dates.
   pendingSummaryAction=onConfirm;
@@ -487,10 +501,10 @@ function showSaveSummary(title,kind,rows,onConfirm,details=''){
     <div class="summary-date-range"><span>ช่วงวันที่เรียนที่กำลังบันทึก</span><strong>${esc(range)}</strong><small>ทุกแถวด้านล่างระบุวันที่เรียนและบันทึกเชื่อมกับคาบนั้นใน Google Sheets</small></div>
     <div class="summary-highlights summary-highlights-four"><div><small>วันเรียน (ไม่ซ้ำ)</small><strong>${days.length} วัน</strong></div><div><small>รายการที่จะบันทึก</small><strong>${sorted.length}</strong></div><div><small>รวมเวลาที่บันทึก (แพ็กเกจ/รายชั่วโมง)</small><strong>${esc(nice(total))}</strong></div><div><small>การดำเนินการ</small><strong>${kind==='approve'?'ตัดชั่วโมงรายการเก่า':'บันทึกและตัดทันที'}</strong></div></div>
     <details class="confirmation-day-breakdown"><summary>ดูสรุปแยกตามวันที่ (${days.length} วัน)</summary><div class="confirmation-day-list">${days.map(x=>`<div><strong>${esc(confirmationDate(x.date))}</strong><span>${x.count} รายการ · ${x.students.size} นักเรียน · ${esc(nice(x.minutes))}</span></div>`).join('')}</div></details>
-    ${summaryRowsTable(sorted)}<div class="note mt12">* คอร์สแพ็กเกจหักชั่วโมงทันที ส่วนคอร์สรายชั่วโมงออกยอดรอชำระตามราคาของรอบคอร์สนั้น คาบที่ชำระแล้วจะปิดยอด</div>
+    ${options.replaceReview||''}${summaryRowsTable(sorted.map(r=>({...r,before:isPackageCourse(r.courseId)?balance(r.courseId)+(credit.get(r.courseId)||0):undefined})))}<div class="note mt12">* คอร์สแพ็กเกจหักชั่วโมงทันที ส่วนคอร์สรายชั่วโมงออกยอดรอชำระตามราคาของรอบคอร์สนั้น คาบที่ชำระแล้วจะปิดยอด</div>
     ${over.length?'<div class="note warn mt12">บางรายการมีชั่วโมงไม่พอหรือควรตรวจสอบก่อนอนุมัติ</div>':''}
-    <label class="summary-agree"><input type="checkbox" id="summary-ack"> <span>ตรวจสอบ<strong>วันที่เรียนของทุกคาบ</strong> เวลา นักเรียน คลาส แพ็กเกจ และชั่วโมงแล้ว ยืนยันว่าข้อมูลถูกต้อง</span></label>
-    <div class="button-row mt20"><button type="button" class="btn" data-action="summary-back">← กลับไปแก้ไข</button><button type="button" class="btn primary" data-action="summary-confirm" id="summary-confirm-btn" disabled>${kind==='approve'?'ยืนยันตัดชั่วโมงรายการเก่า':'ยืนยันบันทึกคาบ / ตัดชั่วโมงหรือคิดเงิน'}</button></div>`, '',true);
+    <label class="summary-agree"><input type="checkbox" id="summary-ack"> <span>ตรวจสอบ<strong>วันที่เรียนของทุกคาบ</strong> เวลา นักเรียน คลาส แพ็กเกจ และชั่วโมงแล้ว ${options.replaceReview?'<strong>พร้อมยืนยันแทนที่ข้อมูลเก่าและคืนยอดเดิมก่อนบันทึกใหม่</strong>':'ยืนยันว่าข้อมูลถูกต้อง'}</span></label>
+    <div class="button-row mt20"><button type="button" class="btn" data-action="summary-back">← กลับไปแก้ไข</button><button type="button" class="btn primary" data-action="summary-confirm" id="summary-confirm-btn" disabled>${kind==='approve'?'ยืนยันตัดชั่วโมงรายการเก่า':options.replaceReview?'ยืนยันเขียนทับไฟล์เดิมและบันทึกใหม่':'ยืนยันบันทึกคาบ / ตัดชั่วโมงหรือคิดเงิน'}</button></div>`, '',true);
 }
 async function confirmSaveSummary(){
   if(!$('#summary-ack')?.checked)throw Error('กรุณาติ๊กยืนยันว่าตรวจสอบข้อมูลแล้ว');
@@ -522,14 +536,12 @@ function importRowsForSummary(d){
     const minutes=p.manualMinutes===null?adjustedByRule(calculatedImport(d,p),ruleFor('group',gid)):Number(p.manualMinutes);
     if(!Number.isInteger(minutes)||minutes<0||minutes>720)throw Error('ตรวจสอบนาทีของ '+p.name);
     const c=byId('Courses',p.courseId);if(!c||c.student_id!==p.studentId)throw Error('เลือกคอร์สให้ '+p.name+' ก่อน');
-    return {student:studentName(p.studentId),source:d.filename+' · Meet: '+p.name,course:courseTitle(c.id),courseId:c.id,classLabel:gid?byId('Groups',gid)?.name||'เรียนกลุ่ม':'เรียนเดี่ยว',minutes,actual:p.actual,date:d.date,dateSource:d.dateSource,timeRange:reportClock(d).start+'–'+reportClock(d).end};
+    return {studentId:p.studentId,student:studentName(p.studentId),source:d.filename+' · Meet: '+p.name,course:courseTitle(c.id),courseId:c.id,classLabel:gid?byId('Groups',gid)?.name||'เรียนกลุ่ม':'เรียนเดี่ยว',minutes,actual:p.actual,date:d.date,dateSource:d.dateSource,timeRange:reportClock(d).start+'–'+reportClock(d).end};
   });
 }
 function previewImportSave(){if(state.importTimeEditing!==null)throw Error('กรุณาบันทึกหรือยกเลิกการแก้เวลาคาบก่อน');if(state.importDateEditing!==null)throw Error('กรุณากด “บันทึกวันที่” หรือ “ยกเลิก” ในตารางสรุปก่อนตรวจสอบคาบ');const d=state.importDraft;if(!d)throw Error('ยังไม่ได้เลือก Excel');
   if(state.importDone[state.importIndex])throw Error('ไฟล์นี้ดำเนินการแล้ว');
-  constructImportBatch([state.importIndex]);
-  const rows=importRowsForSummary(d);
-  ensureBalanceForRows(rows);showSaveSummary('ยืนยันบันทึกรายงาน Google Meet','save',rows,()=>saveImport(),'ยืนยันแล้วบันทึกวันที่และหักชั่วโมงทันที พร้อมจดจำชื่อที่ตรวจสอบแล้ว');
+  importPreviewSave([state.importIndex],'ยืนยันบันทึกรายงาน Google Meet');
 }
 function buildApproval(ids){
   const unique=[...new Set(ids)],sessions=[],aa=[],totals=new Map();if(!unique.length)throw Error('กรุณาเลือกคาบเรียนที่ต้องการอนุมัติ');
@@ -770,7 +782,8 @@ function batchStatus(index){
   if(done==='skipped')return {label:'ข้าม',tone:''};
   if(error)return {label:'อ่านไม่สำเร็จ',tone:'red'};
   if(!d)return {label:'กำลังอ่าน',tone:'blue'};
-  if(all('Imports').some(x=>x.fingerprint===d.fingerprint)||state.importDrafts.some((other,i)=>i<index&&other?.fingerprint===d.fingerprint))return {label:'ไฟล์ซ้ำ',tone:'red'};
+  if(state.importDrafts.some((other,i)=>i<index&&other?.fingerprint===d.fingerprint))return {label:'ซ้ำในชุดนี้',tone:'red'};
+  const matchStatus=importReplaceStatus(d,index);if(matchStatus)return matchStatus;
   const diff=d.people.filter((p,i)=>i!==d.tutorIndex&&getPersonStatus(d,p).level!=='match').length;
   if(!dateValid(d.date)||d.dateConflict)return {label:'ตรวจวันที่',tone:'gold'};return diff?{label:`ตรวจชื่อ ${diff} คน`,tone:'gold'}:{label:'จับคู่ครบ',tone:'green'};
 }
@@ -869,9 +882,107 @@ function inspectImportDeletion(importId){
   });
   return {record,sessions,attendance,billing,makeup,refunds,affectedStudents,problems,signature};
 }
+function importRegistrySignature(){
+  return JSON.stringify(all('Imports').map(r=>[r.id,r.fingerprint,r.filename,r.date,r.session_id]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+}
+function importReplaceMatches(d){
+  if(!d)return {matches:[],strong:[]};
+  const name=norm(d.filename);
+  const matches=all('Imports').filter(x=>(d.fingerprint&&x.fingerprint===d.fingerprint)||(name&&norm(x.filename)===name));
+  const strong=matches.filter(x=>(d.fingerprint&&x.fingerprint===d.fingerprint)||(name&&norm(x.filename)===name&&x.date===d.date));
+  return {matches,strong};
+}
+function importReplaceStatus(d,index){
+  const {matches,strong}=importReplaceMatches(d);
+  if(!matches.length)return null;
+  const choice=state.importReplaceChoices[index]||'';
+  if(!choice)return {label:strong.length?'พบไฟล์ซ้ำ · เลือกแทนที่':'ชื่อไฟล์เคยใช้ · ตรวจสอบ',tone:'gold'};
+  if(choice==='new')return strong.length?{label:'ต้องแทนที่ไฟล์เดิม',tone:'red'}:{label:'ยืนยันเป็นคาบใหม่',tone:'green'};
+  const id=choice.startsWith('replace:')?choice.slice(8):'';
+  return matches.some(x=>x.id===id)?{label:'รอแทนที่ไฟล์เดิม',tone:'gold'}:{label:'โปรดเลือกไฟล์เดิมใหม่',tone:'red'};
+}
+function importReplacePicker(d,index){
+  const {matches,strong}=importReplaceMatches(d);
+  if(!matches.length)return '';
+  const value=state.importReplaceChoices[index]||'';
+  const selectableNew=!strong.length;
+  return `<div class="aw-replace-box"><label for="import-replace-${index}">⚠ พบไฟล์ที่เคยบันทึก · เลือกวิธีจัดการ</label>
+    <select id="import-replace-${index}" data-import-replace="${index}" aria-label="เลือกวิธีจัดการไฟล์ ${esc(d.filename)}">
+      <option value="" ${!value?'selected':''}>— เลือกหลังตรวจสอบ —</option>
+      ${selectableNew?`<option value="new" ${value==='new'?'selected':''}>บันทึกเป็นคาบใหม่ (ไม่ทับ)</option>`:''}
+      ${matches.map(r=>`<option value="replace:${esc(r.id)}" ${value==='replace:'+r.id?'selected':''}>แทนที่ ${esc(r.filename)} · ${esc(r.date||'ไม่ระบุวันที่')}</option>`).join('')}
+    </select><small>${strong.length?'เนื้อหาหรือชื่อและวันที่ตรงกับไฟล์เดิม ต้องเลือกแทนที่เพื่อป้องกันการตัดซ้ำ':'ชื่อไฟล์ตรง แต่วันเรียนต่างกัน กรุณายืนยันว่าเป็นคาบใหม่หรือเลือกแทนที่รายการเก่า'} · ระบบจะแสดงเปรียบเทียบก่อนบันทึกจริง</small></div>`;
+}
+function resolveImportReplacements(indices){
+  const actions=[],taken=new Set(),credits=new Map(),excluded=new Set();
+  for(const ix of [...new Set(indices)]){
+    const d=state.importDrafts[ix];if(!d)throw Error('ไฟล์ยังไม่พร้อมตรวจสอบ');
+    const {matches,strong}=importReplaceMatches(d),choice=state.importReplaceChoices[ix]||'';
+    if(!matches.length){if(choice&&choice!=='new')throw Error('ไฟล์ที่เลือกแทนที่ไม่อยู่ในระบบแล้ว กรุณาตรวจสอบอีกครั้ง');continue;}
+    if(!choice)throw Error('พบไฟล์ที่เคยนำเข้า: '+d.filename+' · กรุณาเลือกว่าจะเขียนทับรายการใด หรือบันทึกเป็นคาบใหม่');
+    if(choice==='new'){
+      if(strong.length)throw Error('ไฟล์ '+d.filename+' มีเนื้อหาหรือชื่อและวันเรียนซ้ำ ไม่สามารถบันทึกเป็นคาบใหม่ได้');
+      continue;
+    }
+    const id=choice.startsWith('replace:')?choice.slice(8):'';
+    if(!id||!matches.some(x=>x.id===id))throw Error('รายการแทนที่ของ '+d.filename+' ไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง');
+    if(taken.has(id))throw Error('คุณเลือกเขียนทับไฟล์เดิมเดียวกันมากกว่า 1 ครั้งในชุดนี้');
+    taken.add(id);
+    const old=inspectImportDeletion(id);
+    if(old.problems.length)throw Error('ไม่สามารถแทนที่ '+old.record.filename+': '+old.problems.join(' · '));
+    for(const session of old.sessions)excluded.add(session.id);
+    for(const r of old.refunds)credits.set(r.course_id,(credits.get(r.course_id)||0)+r.minutes);
+    actions.push({index:ix,old});
+  }
+  return {actions,credits,excluded,registrySignature:importRegistrySignature()};
+}
+function importReplacementReview(context){
+  if(!context.actions.length)return '';
+  const snippets=context.actions.map(({index,old})=>{
+    const newer=state.importDrafts[index],newRows=importRowsForSummary(newer),totals=new Map();
+    for(const a of old.attendance.filter(a=>a.status!=='cancelled')){
+      const key=a.student_id+'|'+a.course_id,entry=totals.get(key)||{student:studentName(a.student_id),course:courseTitle(a.course_id),old:0,next:0};
+      entry.old+=num(a.deduct_minutes);totals.set(key,entry);
+    }
+    for(const a of newRows){
+      const key=a.studentId+'|'+a.courseId,entry=totals.get(key)||{student:a.student,course:a.course,old:0,next:0};
+      entry.next+=num(a.minutes);totals.set(key,entry);
+    }
+    const rows=[...totals.values()].sort((a,b)=>a.student.localeCompare(b.student,'th')).map(entry=>{
+      const diff=entry.next-entry.old;
+      return `<tr><td>${esc(entry.student)}<small style="display:block">${esc(entry.course)}</small></td><td>${esc(nice(entry.old))}</td><td>${esc(nice(entry.next))}</td><td>${diff===0?'เท่าเดิม':(diff>0?'+':'−')+esc(nice(Math.abs(diff)))}</td></tr>`;
+    });
+    const oldTimes=[...new Set(old.sessions.map(x=>x.date+' '+(x.start_time||'—')+'–'+(x.end_time||'—')))];
+    const newClock=reportClock(newer);
+    return `<div class="aw-replace-heading"><strong>ไฟล์เดิม:</strong> ${esc(old.record.filename)} (${esc(old.record.date)}) · ${old.sessions.length} คาบ / ${old.attendance.filter(a=>a.status!=='cancelled').length} รายการเรียน<br><small>วันและเวลาเดิม: ${esc(oldTimes.join(', ')||'ไม่มีคาบที่เชื่อม')}</small><br><strong>ไฟล์ใหม่:</strong> ${esc(newer.filename)} (${esc(newer.date)}) · ${newRows.length} รายการเรียน<br><small>วันและเวลาใหม่: ${esc(newer.date+' '+(newClock.start||'—')+'–'+(newClock.end||'—'))}</small></div>
+    <div class="aw-replace-scroller"><table><thead><tr><th>นักเรียน / คอร์ส</th><th>เวลาเดิม</th><th>เวลาใหม่</th><th>ผลต่าง</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  });
+  const oldMinutes=context.actions.reduce((v,x)=>v+x.old.attendance.filter(a=>a.status!=='cancelled').reduce((n,a)=>n+num(a.deduct_minutes),0),0);
+  const newMinutes=context.actions.reduce((v,x)=>v+importRowsForSummary(state.importDrafts[x.index]).reduce((n,r)=>n+num(r.minutes),0),0);
+  return `<div class="aw-replace-summary"><h4>🔄 ตรวจสอบข้อมูลก่อนเขียนทับ ${context.actions.length} ไฟล์</h4>
+    <p class="helper">ข้อมูลเดิม: ${esc(nice(oldMinutes))} → ข้อมูลใหม่: ${esc(nice(newMinutes))} · ระบบยกเลิกข้อมูลเดิม คืนชั่วโมงแพ็กเกจ และบันทึกฉบับใหม่เป็นชุดเดียวใน Google Sheets โดยเก็บประวัติยกเลิกและ Audit ไว้</p>
+    ${snippets.join('<hr style="border:0;border-top:1px solid #e3ddc9;margin:14px 0">')}
+    <p class="helper" style="margin-top:10px">ค่าคาบรายชั่วโมงที่ยังไม่ชำระจะยกเลิกก่อนสร้างยอดใหม่ หากพบการชำระแล้วหรือคำขอค้าง ระบบจะไม่อนุญาตให้เขียนทับ</p></div>`;
+}
+function importReplaceChanges(context){
+  const updates={Sessions:[],Attendance:[],Billing:[],MakeupCredits:[]},refundRows=[],deleteIds=[],audit=[];
+  for(const {old} of context.actions){
+    const stamp=now();deleteIds.push(old.record.id);
+    updates.Sessions.push(...old.sessions.filter(s=>s.status!=='cancelled').map(s=>({...s,status:'cancelled'})));
+    updates.Attendance.push(...old.attendance.filter(a=>a.status!=='cancelled').map(a=>({...a,status:'cancelled'})));
+    updates.Billing.push(...old.billing.filter(b=>!['void','refunded'].includes(b.status)).map(b=>({...b,status:'void',updated_at:stamp})));
+    updates.MakeupCredits.push(...old.makeup.map(m=>({...m,status:'scheduled',linked_attendance_id:'',updated_at:stamp})));
+    for(const r of old.refunds){
+      const linked=old.attendance.find(a=>a.course_id===r.course_id&&a.student_id===r.student_id);
+      refundRows.push({id:uuid(),student_id:r.student_id,course_id:r.course_id,session_id:linked?.session_id||old.sessions[0]?.id||'',type:'refund',minutes:r.minutes,note:'คืนชั่วโมงเพื่อแทนที่ไฟล์ Meet: '+old.record.filename,created_at:stamp});
+    }
+    audit.push(saveAudit('excel_import_replaced_previous',old.record.id,{filename:old.record.filename,date:old.record.date,sessions:old.sessions.map(s=>s.id),minutesRefunded:old.refunds.reduce((v,r)=>v+r.minutes,0)}));
+  }
+  return {updates,refundRows,deleteIds,audit};
+}
 function importSavedArchivePanel(){
   const records=all('Imports').slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.created_at||'').localeCompare(String(a.created_at||'')));
-  return `<section class="aw-import-archive" id="aw-import-archive"><div class="aw-import-archive-top"><div><h2>🗂 จัดการไฟล์ Google Meet ที่เคยนำเข้า</h2><p>ลบทะเบียนไฟล์ใน Google Sheets เพื่ออัปโหลดไฟล์ฉบับแก้ไขได้อีกครั้ง · ข้อมูลคาบเก่าจะถูกยกเลิกและคืนชั่วโมงอย่างมีประวัติ</p></div>${pill(records.length+' ไฟล์ที่บันทึก','green')}</div>
+  return `<section class="aw-import-archive" id="aw-import-archive"><div class="aw-import-archive-top"><div><h2>🗂 จัดการไฟล์ Google Meet ที่เคยนำเข้า</h2><p>สามารถอัปโหลดไฟล์ชื่อเดิมได้ทันที ระบบจะให้ตรวจสอบและเลือกเขียนทับก่อนยืนยัน หรือจะลบทะเบียนไฟล์เองก็ได้</p></div>${pill(records.length+' ไฟล์ที่บันทึก','green')}</div>
     <div class="aw-import-archive-tools"><input id="import-archive-search" type="search" placeholder="ค้นหาชื่อไฟล์ / วันที่เรียน" aria-label="ค้นหาไฟล์ที่นำเข้าแล้ว"><small id="import-archive-match-count" class="helper">${records.length} รายการ</small></div>
     <div id="import-archive-rows">${records.map(rec=>{
       const sid=String(rec.session_id||'').split('|').filter(Boolean),set=new Set(sid);
@@ -921,8 +1032,8 @@ function importPage(){
   const draft=state.importDraft;
   return `${head('AUTOMATION / ATTENDANCE','Import Google Meet Excel','นำเข้าไฟล์ → สรุปวันเรียน → ตั้งค่าคลาส → จับคู่ชื่อ → สรุปก่อนบันทึก',btn('＋ Manual Entry','go-manual','soft'))}
   <div class="import-progress-steps" aria-label="ขั้นตอนนำเข้า"><div class="import-progress-step current"><span>01</span><strong>อัปโหลดไฟล์</strong></div><div class="import-progress-step ${state.importQueue.length?'current':''}"><span>02</span><strong>ตรวจวันและเวลา</strong></div><div class="import-progress-step ${state.importDraft?'current':''}"><span>03</span><strong>ตั้งค่าและจับคู่ชื่อ</strong></div><div class="import-progress-step"><span>04</span><strong>ตรวจสอบก่อนบันทึก</strong></div></div>
-  ${state.lastImportSummary?`<div class="note import-saved"><strong>บันทึกเรียบร้อย ${state.lastImportSummary.count} ไฟล์ · ${state.lastImportSummary.dates} วันเรียน · หัก ${nice(state.lastImportSummary.minutes)}</strong> · ล้างไฟล์ที่นำเข้าแล้ว พร้อมอัปโหลดชุดใหม่ ${btn('ดูประวัติ','go-history','small soft')}</div>`:''}
-  <section class="panel import-upload-panel"><div class="import-section-title"><span class="import-step">01</span><div><h2 class="panel-title">Upload Attendance Files</h2><p class="panel-desc">รองรับ Excel หลายไฟล์ในชุดเดียว · ยืนยันครั้งเดียวแล้วบันทึกพร้อมตัดชั่วโมง</p></div></div>
+  ${state.lastImportSummary?`<div class="note import-saved"><strong>บันทึกเรียบร้อย ${state.lastImportSummary.count} ไฟล์${state.lastImportSummary.replaced?' · แทนที่ '+state.lastImportSummary.replaced+' ไฟล์เดิม':''} · ${state.lastImportSummary.dates} วันเรียน · หัก ${nice(state.lastImportSummary.minutes)}</strong> · ล้างไฟล์ที่นำเข้าแล้ว พร้อมอัปโหลดชุดใหม่ ${btn('ดูประวัติ','go-history','small soft')}</div>`:''}
+  <section class="panel import-upload-panel"><div class="import-section-title"><span class="import-step">01</span><div><h2 class="panel-title">Upload Attendance Files</h2><p class="panel-desc">รองรับไฟล์ Excel ซ้ำจากประวัติเดิม · เลือกแทนที่ ตรวจสอบข้อมูลเก่า–ใหม่ แล้วยืนยันบันทึกครั้งเดียว</p></div></div>
   <div class="dropzone" id="excel-dropzone" role="region" aria-label="ลากวาง Excel หลายไฟล์"><div class="dropzone-icon">⇧</div><strong>ลากไฟล์ Excel หลายไฟล์มาวางพร้อมกัน</strong><small>.xlsx, .xls, .csv · สูงสุด 50 ไฟล์ต่อชุด · ไฟล์ละไม่เกิน 10 MB</small><label class="btn primary" for="excel-file">＋ เลือกไฟล์ Excel</label><input id="excel-file" type="file" accept=".xlsx,.xls,.csv" multiple hidden></div><div class="import-upload-progress" id="import-upload-progress" aria-live="polite" hidden></div></section>
   ${importSavedArchivePanel()}
   ${state.importQueue.length?batchOverview():''}
@@ -949,7 +1060,7 @@ function batchOverview(){
       ${d.dateSource==='manual'&&!d.dateConflict?'<small class="import-date-confirmed">แก้วันที่แล้ว</small>':''}
       ${!locked?(editing?`<div class="import-date-editor"><label class="import-date-row-label" for="import-date-file-${i}">วันที่เรียนของไฟล์นี้</label><input type="date" class="import-date-inline" id="import-date-file-${i}" data-import-date-file="${i}" value="${dateValid(d.date)?esc(d.date):''}" aria-label="แก้วันที่เรียนไฟล์ ${esc(file.name)}"><div class="import-date-editor-actions"><button type="button" class="btn small primary" data-action="save-import-date-file" data-id="${i}">บันทึกวันที่</button><button type="button" class="btn small soft" data-action="cancel-import-date-file" data-id="${i}">ยกเลิก</button></div></div>`:`<button type="button" class="import-date-edit-btn" data-action="edit-import-date-file" data-id="${i}" aria-label="${needsDate?'ระบุวันที่':'แก้วันที่'}เรียนของไฟล์ ${esc(file.name)}">${needsDate?'ระบุ / ยืนยันวันที่':'✎ แก้วันที่'}</button>`):''}
     </div>`;
-    return `<tr class="${i===state.importIndex?'is-current':''}"><td><input type="checkbox" aria-label="รวมไฟล์ ${esc(file.name)}" data-batch-select="${i}" ${state.batchIncluded[i]!==false&&!!d&&!locked?'checked':''} ${!d||locked?'disabled':''}></td><td>${dateCell}</td><td><div class="import-time-cell">${clock.start?`<span class="nowrap">${esc(clock.start)}–${esc(clock.end)}</span>`:'—'}${d?.timeOverrideStart?'<small class="import-date-confirmed">ปรับเวลาคาบแล้ว · เวลาจริงคงเดิม</small>':''}${d&&!locked?(timeEditing?`<div class="import-time-editor"><label>เริ่มเรียน<input type="time" id="import-time-start-${i}" value="${esc(clock.start)}"></label><label>สิ้นสุด<input type="time" id="import-time-end-${i}" value="${esc(clock.end)}"></label><div class="button-row"><button type="button" class="btn small primary" data-action="save-import-time" data-id="${i}">บันทึกเวลา</button><button type="button" class="btn small soft" data-action="cancel-import-time">ยกเลิก</button></div></div>`:`<button type="button" class="import-date-edit-btn" data-action="edit-import-time" data-id="${i}">✎ แก้เวลา</button>`):''}</div></td><td><strong>${esc(nice(clock.minutes))}</strong></td><td>${count} คน</td><td><span class="import-filename" title="${esc(file.name)}">${esc(file.name)}</span><small>${!d?'—':d.dateSource==='manual'?'วันที่แก้ไขโดยผู้ใช้':d.dateSource==='excel'?'วันที่จาก Excel':d.dateSource==='filename'?'วันที่จากชื่อไฟล์':'ยังไม่ทราบวันที่'}</small></td><td>${pill(status.label,status.tone)}</td><td><button type="button" class="btn small ${i===state.importIndex?'primary':'soft'}" data-action="import-switch" data-id="${i}">ตรวจสอบ</button></td></tr>`;
+    return `<tr class="${i===state.importIndex?'is-current':''}"><td><input type="checkbox" aria-label="รวมไฟล์ ${esc(file.name)}" data-batch-select="${i}" ${state.batchIncluded[i]!==false&&!!d&&!locked?'checked':''} ${!d||locked?'disabled':''}></td><td>${dateCell}</td><td><div class="import-time-cell">${clock.start?`<span class="nowrap">${esc(clock.start)}–${esc(clock.end)}</span>`:'—'}${d?.timeOverrideStart?'<small class="import-date-confirmed">ปรับเวลาคาบแล้ว · เวลาจริงคงเดิม</small>':''}${d&&!locked?(timeEditing?`<div class="import-time-editor"><label>เริ่มเรียน<input type="time" id="import-time-start-${i}" value="${esc(clock.start)}"></label><label>สิ้นสุด<input type="time" id="import-time-end-${i}" value="${esc(clock.end)}"></label><div class="button-row"><button type="button" class="btn small primary" data-action="save-import-time" data-id="${i}">บันทึกเวลา</button><button type="button" class="btn small soft" data-action="cancel-import-time">ยกเลิก</button></div></div>`:`<button type="button" class="import-date-edit-btn" data-action="edit-import-time" data-id="${i}">✎ แก้เวลา</button>`):''}</div></td><td><strong>${esc(nice(clock.minutes))}</strong></td><td>${count} คน</td><td><span class="import-filename" title="${esc(file.name)}">${esc(file.name)}</span><small>${!d?'—':d.dateSource==='manual'?'วันที่แก้ไขโดยผู้ใช้':d.dateSource==='excel'?'วันที่จาก Excel':d.dateSource==='filename'?'วันที่จากชื่อไฟล์':'ยังไม่ทราบวันที่'}</small></td><td>${pill(status.label,status.tone)}${d&&!locked?importReplacePicker(d,i):''}</td><td><button type="button" class="btn small ${i===state.importIndex?'primary':'soft'}" data-action="import-switch" data-id="${i}">ตรวจสอบ</button></td></tr>`;
   }).join('')||'<tr><td colspan="8" class="empty">ไม่มีรายการที่ตรงกับตัวกรอง</td></tr>'}
   </tbody></table></div><p class="helper mt12">* นับระยะเวลาที่ติวเตอร์อยู่ใน Meet จากแต่ละรายงาน ไม่ใช่ชั่วโมงที่หักจากกระเป๋านักเรียน และไฟล์ที่มีเวลาซ้อนกันอาจเป็นคาบเดียวกัน</p>
   <div class="import-summary-actions"><div class="button-row">${btn('เลือกทุกไฟล์ที่ยังไม่บันทึก','batch-select-all','small soft')}${btn('ล้างการเลือก','batch-select-none','small')}</div><button type="button" class="btn primary" data-action="preview-batch-import">สรุปก่อนบันทึก ${selected.length} ไฟล์ →</button></div></section>`;
@@ -1443,7 +1554,8 @@ function reportStatus(d,index){
   if(state.importDone[index]==='saved')return {tone:'green',label:'บันทึกและตัดแล้ว'};
   if(state.importDone[index]==='skipped')return {tone:'',label:'ข้าม'};
   if(!d)return {tone:'red',label:state.importErrors[index]||'อ่านไม่ได้'};
-  if(all('Imports').some(x=>x.fingerprint===d.fingerprint)||state.importDrafts.some((x,i)=>i<index&&x?.fingerprint===d.fingerprint))return {tone:'red',label:'ไฟล์ซ้ำ'};
+  if(state.importDrafts.some((x,i)=>i<index&&x?.fingerprint===d.fingerprint))return {tone:'red',label:'ซ้ำในชุดนี้'};
+  const matchStatus=importReplaceStatus(d,index);if(matchStatus)return matchStatus;
   if(!dateValid(d.date)||d.dateConflict)return {tone:'gold',label:'ตรวจสอบวันที่'};
   if(d.people.filter((p,i)=>i!==d.tutorIndex&&p.include).some(p=>!p.studentId||p.matchLevel==='conflict'))return {tone:'gold',label:'ตรวจชื่อ'};
   if(!d.people.some((p,i)=>i!==d.tutorIndex))return {tone:'gold',label:'ไม่มีนักเรียน'};
@@ -1519,10 +1631,10 @@ function stepImport(step,markSkipped=false){
   state.importDraft=null;render();toast('ตรวจชุดไฟล์ครบแล้ว เปิดดูสถานะได้จากรายการด้านบน');
 }
 
-function duplicateAttendance(date,studentId,start,end){
+function duplicateAttendance(date,studentId,start,end,ignoreSessionIds=null){
   const st=minutesOf(start),en=minutesOf(end);if(!Number.isFinite(st)||!Number.isFinite(en))return null;const e=en<st?en+1440:en;
   for(const a of all('Attendance').filter(a=>a.student_id===studentId&&a.status!=='cancelled')){
-    const existing=byId('Sessions',a.session_id);if(!existing||existing.status==='cancelled'||existing.date!==date)continue;
+    const existing=byId('Sessions',a.session_id);if(ignoreSessionIds?.has(a.session_id)||!existing||existing.status==='cancelled'||existing.date!==date)continue;
     const x=minutesOf(a.join_time||existing.start_time),y=minutesOf(a.leave_time||existing.end_time);if(!Number.isFinite(x)||!Number.isFinite(y))continue;
     const upper=y<x?y+1440:y;if(Math.max(st,x)<Math.min(e,upper))return existing;
   }
@@ -1532,7 +1644,8 @@ function duplicateAttendance(date,studentId,start,end){
 function importBatchIndices(){return state.importDrafts.map((d,i)=>d&&!state.importDone[i]&&state.batchIncluded[i]!==false?i:-1).filter(i=>i>=0);}
 function constructImportBatch(indices){
   if(!indices.length)throw Error('กรุณาเลือกไฟล์อย่างน้อยหนึ่งไฟล์');
-  const usedFingerprints=new Set(all('Imports').map(x=>x.fingerprint)),reserved=[],sessions=[],attendance=[],imports=[],aliases=[],audit=[];
+  const replacements=resolveImportReplacements(indices),replaceIds=new Set(replacements.actions.map(x=>x.old.record.id));
+  const usedFingerprints=new Set(all('Imports').filter(x=>!replaceIds.has(x.id)).map(x=>x.fingerprint)),reserved=[],sessions=[],attendance=[],imports=[],aliases=[],audit=[];
   for(const ix of [...new Set(indices)]){
     const d=state.importDrafts[ix];if(!d)throw Error('ไฟล์ '+(state.importQueue[ix]?.name||ix)+' ไม่พร้อมบันทึก');
     if(usedFingerprints.has(d.fingerprint))throw Error('ไฟล์ซ้ำหรือเคยนำเข้าแล้ว: '+d.filename);
@@ -1552,7 +1665,7 @@ function constructImportBatch(indices){
       const course=byId('Courses',person.courseId);
       if(!course||course.student_id!==person.studentId||!['active','held'].includes(course.status))throw Error('คอร์สไม่ถูกต้อง: '+studentName(person.studentId));
       if(coursePolicy(course.id)?.expires_on&&d.date>coursePolicy(course.id).expires_on)throw Error('คอร์สหมดอายุ: '+studentName(person.studentId));
-      const overlapping=duplicateAttendance(d.date,person.studentId,person.join,person.leave)|| (d.timeOverrideStart&&duplicateAttendance(d.date,person.studentId,d.timeOverrideStart,d.timeOverrideEnd));
+      const overlapping=duplicateAttendance(d.date,person.studentId,person.join,person.leave,replacements.excluded)|| (d.timeOverrideStart&&duplicateAttendance(d.date,person.studentId,d.timeOverrideStart,d.timeOverrideEnd,replacements.excluded));
       if(overlapping)throw Error('พบเวลาซ้อนกับคาบเก่าของ '+studentName(person.studentId)+' '+d.date);
       const a=minutesOf(d.timeOverrideStart||person.join),b=minutesOf(d.timeOverrideEnd||person.leave),last=b<a?b+1440:b;
       if(Number.isFinite(a)&&Number.isFinite(b)){
@@ -1580,18 +1693,40 @@ function constructImportBatch(indices){
     const imp={id:uuid(),fingerprint:d.fingerprint,filename:d.filename,date:d.date,session_id:sessionIds.join('|'),created_at:time};
     imports.push(imp);audit.push(saveAudit('excel_import',imp.id,{filename:d.filename,classDate:d.date,dateSource:d.dateSource,editedSessionTime:d.timeOverrideStart?{from:reportClockRaw(d),to:{start:st,end:en}}:null,sessions:sessionIds.length,people:staged.length,bulkFiles:indices.length}));
   }
-  const ledger=attendance.filter(a=>a.deduct_minutes>0&&isPackageCourse(a.course_id)).map(a=>({id:uuid(),student_id:a.student_id,course_id:a.course_id,session_id:a.session_id,type:'deduct',minutes:-num(a.deduct_minutes),note:'Meet import '+sessions.find(s=>s.id===a.session_id)?.date,created_at:now()}));ensureBalanceForRows(attendance);const billing=attendance.filter(a=>!isPackageCourse(a.course_id)).map(a=>hourlyInvoice(a,byId('Courses',a.course_id)));return {sessions,attendance,imports,aliases,audit,ledger,billing};
+  const ledger=attendance.filter(a=>a.deduct_minutes>0&&isPackageCourse(a.course_id)).map(a=>({id:uuid(),student_id:a.student_id,course_id:a.course_id,session_id:a.session_id,type:'deduct',minutes:-num(a.deduct_minutes),note:'Meet import '+sessions.find(s=>s.id===a.session_id)?.date,created_at:now()}));ensureBalanceForRows(attendance,replacements.credits);const billing=attendance.filter(a=>!isPackageCourse(a.course_id)).map(a=>hourlyInvoice(a,byId('Courses',a.course_id)));return {sessions,attendance,imports,aliases,audit,ledger,billing,replacements};
 }
-function previewImportBatch(){
-  if(state.importTimeEditing!==null)throw Error('กรุณาบันทึกหรือยกเลิกการแก้เวลาคาบก่อน');if(state.importDateEditing!==null)throw Error('กรุณากด “บันทึกวันที่” หรือ “ยกเลิก” ในตารางสรุปก่อนบันทึกไฟล์');
-  const indices=importBatchIndices();constructImportBatch(indices); // validate all files before showing confirmation
-  const rows=indices.flatMap(i=>importRowsForSummary(state.importDrafts[i]));
-  ensureBalanceForRows(rows);showSaveSummary('บันทึก Google Meet '+indices.length+' ไฟล์','save',rows,()=>saveImports(indices),'ยืนยันแล้วบันทึกและตัดชั่วโมงทุกไฟล์พร้อมกัน โดยเก็บวันที่ของแต่ละไฟล์');
-}
-async function saveImports(indices){
+function importPreviewSave(indices,heading){
+  if(state.importTimeEditing!==null)throw Error('กรุณาบันทึกหรือยกเลิกการแก้เวลาคาบก่อน');
+  if(state.importDateEditing!==null)throw Error('กรุณาบันทึกหรือยกเลิกวันที่เรียนก่อน');
   const plan=constructImportBatch(indices);
-  await commit({add:{Sessions:plan.sessions,Attendance:plan.attendance,Ledger:plan.ledger,Billing:plan.billing,Imports:plan.imports,MeetAliases:plan.aliases,Audit:plan.audit}});
-  clearImportWorkspace();state.lastImportSummary={count:plan.imports.length,minutes:plan.ledger.reduce((t,x)=>t-x.minutes,0),dates:new Set(plan.imports.map(x=>x.date)).size};state.view='import';render();toast('บันทึก '+plan.imports.length+' ไฟล์ · คอร์สรายชั่วโมงสร้างยอดรอชำระแล้ว · พร้อมนำเข้าชุดใหม่');
+  const rows=indices.flatMap(i=>importRowsForSummary(state.importDrafts[i]));
+  ensureBalanceForRows(rows,plan.replacements.credits);
+  const review=importReplacementReview(plan.replacements);
+  const fingerprint=plan.replacements.registrySignature;
+  const signatures=plan.replacements.actions.map(({index,old})=>[index,old.record.id,old.signature]);
+  showSaveSummary(heading,'save',rows,()=>saveImports(indices,{fingerprint,signatures}),
+    review?'ยืนยันการเขียนทับ: ยกเลิกคาบเดิม คืนชั่วโมง แล้วบันทึกข้อมูลใหม่พร้อม Audit ในคำสั่งเดียว':'ยืนยันแล้วบันทึกวันที่และหักชั่วโมงทุกไฟล์พร้อมกัน',
+    {credits:plan.replacements.credits,replaceReview:review});
+}
+function previewImportBatch(){importPreviewSave(importBatchIndices(),'บันทึก Google Meet '+importBatchIndices().length+' ไฟล์');}
+async function saveImports(indices,expected=null){
+  // Reload right before writing to detect changed imports and protected financial records.
+  if(state.mode==='live')state.data=await store.load();
+  const plan=constructImportBatch(indices);
+  if(expected){
+    if(plan.replacements.registrySignature!==expected.fingerprint)throw Error('ทะเบียนไฟล์นำเข้ามีการเปลี่ยนแปลง กรุณากลับไปตรวจสอบรายการแทนที่ก่อนยืนยันใหม่');
+    const current=plan.replacements.actions.map(({index,old})=>[index,old.record.id,old.signature]);
+    if(JSON.stringify(current)!==JSON.stringify(expected.signatures))throw Error('ข้อมูลคาบหรือยอดเงินของไฟล์เดิมเปลี่ยนแปลง กรุณาตรวจสอบก่อนเขียนทับอีกครั้ง');
+  }
+  const changes=importReplaceChanges(plan.replacements);
+  await commit({
+    update:changes.updates,
+    delete:changes.deleteIds.length?{Imports:changes.deleteIds}:{},
+    add:{Sessions:plan.sessions,Attendance:plan.attendance,Ledger:[...changes.refundRows,...plan.ledger],Billing:plan.billing,Imports:plan.imports,MeetAliases:plan.aliases,Audit:[...changes.audit,...plan.audit]}
+  },{busyText:changes.deleteIds.length?'กำลังแทนที่คาบเดิม คืนชั่วโมง และบันทึกไฟล์ใหม่…':'กำลังบันทึกไฟล์ Google Meet…'});
+  const replaced=changes.deleteIds.length;
+  clearImportWorkspace();state.lastImportSummary={count:plan.imports.length,minutes:plan.ledger.reduce((t,x)=>t-x.minutes,0),dates:new Set(plan.imports.map(x=>x.date)).size,replaced};
+  state.view='import';render();toast('บันทึก '+plan.imports.length+' ไฟล์'+(replaced?' · แทนที่ข้อมูลเดิม '+replaced+' ไฟล์':'')+' สำเร็จ · พร้อมนำเข้าชุดใหม่');
 }
 async function saveImport(){return saveImports([state.importIndex]);}
 
@@ -1607,7 +1742,7 @@ case 'save-import-date-file':{const index=Number(id),draft=state.importDrafts[in
   draft.date=value;draft.dateConflict=false;draft.dateSource='manual';
   draft.dateNotes='ผู้ใช้กำหนดวันที่เรียนของไฟล์นี้ในตารางสรุป (เดิม: '+(original||'ไม่พบวันที่')+')';
   state.importDateEditing=null;render();toast('อัปเดตวันที่ '+draft.filename+' เป็น '+displayReportDate(value));break;}
-case 'confirm-import-date-file':{const index=Number(id),draft=state.importDrafts[index];if(!draft||!dateValid(draft.date))throw Error('โปรดระบุวันที่เรียนที่ถูกต้องสำหรับไฟล์นี้');draft.dateConflict=false;draft.dateSource='manual';draft.dateNotes='ยืนยันวันที่โดยผู้ใช้';state.importDateEditing=null;render();break;}case 'preview-batch-import':previewImportBatch();break;case 'batch-select-all':for(const [i,d] of state.importDrafts.entries())if(d&&!state.importDone[i])state.batchIncluded[i]=true;render();break;case 'batch-select-none':for(const [i,d] of state.importDrafts.entries())if(d&&!state.importDone[i])state.batchIncluded[i]=false;render();break;case 'skip-import':stepImport(1,true);break;case 'import-next':stepImport(1);break;case 'import-switch':state.importIndex=Number(id);state.importDateEdit=false;state.importDateEditing=null;state.importTimeEditing=null;loadCurrentImport();break;case 'reset-import':if(confirm('ล้างรายการไฟล์ที่กำลังตรวจสอบ? ข้อมูลที่บันทึกแล้วจะยังอยู่')){state.importQueue=[];state.importDrafts=[];state.importErrors=[];state.importDone=[];state.batchIncluded={};state.importDraft=null;state.importDateEdit=false;state.importDateEditing=null;state.importTimeEditing=null;render();}break;case 'close-modal':closeModal();break;case 'export-csv':downloadCSV();break;case 'close-drawer':closeCalendarDrawer();break;
+case 'confirm-import-date-file':{const index=Number(id),draft=state.importDrafts[index];if(!draft||!dateValid(draft.date))throw Error('โปรดระบุวันที่เรียนที่ถูกต้องสำหรับไฟล์นี้');draft.dateConflict=false;draft.dateSource='manual';draft.dateNotes='ยืนยันวันที่โดยผู้ใช้';state.importDateEditing=null;render();break;}case 'preview-batch-import':previewImportBatch();break;case 'batch-select-all':for(const [i,d] of state.importDrafts.entries())if(d&&!state.importDone[i])state.batchIncluded[i]=true;render();break;case 'batch-select-none':for(const [i,d] of state.importDrafts.entries())if(d&&!state.importDone[i])state.batchIncluded[i]=false;render();break;case 'skip-import':stepImport(1,true);break;case 'import-next':stepImport(1);break;case 'import-switch':state.importIndex=Number(id);state.importDateEdit=false;state.importDateEditing=null;state.importTimeEditing=null;loadCurrentImport();break;case 'reset-import':if(confirm('ล้างรายการไฟล์ที่กำลังตรวจสอบ? ข้อมูลที่บันทึกแล้วจะยังอยู่')){state.importQueue=[];state.importDrafts=[];state.importErrors=[];state.importDone=[];state.importReplaceChoices={};state.batchIncluded={};state.importDraft=null;state.importDateEdit=false;state.importDateEditing=null;state.importTimeEditing=null;render();}break;case 'close-modal':closeModal();break;case 'export-csv':downloadCSV();break;case 'close-drawer':closeCalendarDrawer();break;
 case 'calendar-drawer':openCalendarDrawer(id);break;
 case 'go-system':go('system');break;
 case 'go-leave':go('leave');break;
@@ -1641,7 +1776,7 @@ case 'export-ics':exportICS();break;
 case 'student-ics':exportICS(id);break;
 case 'parent-pdf-direct':await parentPdfDirect();break;
 case 'print-report':printReport();break;}}catch(err){notice(err);}}
-async function onChange(e){const t=e.target;try{if(t.name==='member'&&t.closest('#group-form')){updateGroupMemberCount();return;}if(t.id==='leave-with-makeup'){const area=$('#leave-makeup-fields');if(area)area.hidden=!t.checked;return;}if(t.id==='manual-picker'){chooseManualStudent(t.value);return;}if(t.hasAttribute('data-manual-member')){const c=[...document.querySelectorAll('.manual-check')].find(x=>x.value===t.dataset.manualMember);if(c)c.checked=t.checked;return;}if(t.hasAttribute('data-manual-course')){const c=document.querySelector(`.manual-course[data-student="${CSS.escape(t.dataset.manualCourse)}"]`);if(c)c.value=t.value;return;}if(t.id==='system-verify-file'){await previewBackupFile(t.files?.[0]);t.value='';return;}if(t.id==='system-restore-demo'){await restoreDemoBackup(t.files?.[0]);return;}if(t.id==='excel-file'){const files=[...t.files];if(!files.length)return;await prepareImportBatch(files);return;}if(t.id==='leave-student'){const c=$('#leave-course');if(c)c.innerHTML=activeStudentCourseOptions(t.value);return;}if(t.id==='makeup-student'){const c=$('#makeup-course'),sched=$('#makeup-original-schedule');if(c)c.innerHTML=courseOptions(t.value);if(sched)sched.innerHTML=sourceScheduleOptions(t.value);return;}if(t.id==='course-billing-mode'){updateCourseBillingFields();return;}if(t.id==='course-student'){const s=byId('Students',t.value),rate=$('#course-hourly-rate');if(rate&&s?.hourly_rate_baht)rate.value=s.hourly_rate_baht;return;}if(t.id==='group_id'){const g=byId('Groups',t.value),ids=(g?.member_ids||'').split('|');document.querySelectorAll('.manual-check').forEach(check=>check.checked=ids.includes(check.value));const basis=$('#deduction_mode');if(basis&&ruleFor('group',t.value))basis.value=ruleFor('group',t.value).basis==='tutor'?'full':'full';return;}if(t.id==='summary-ack'){const button=$('#summary-confirm-btn');if(button)button.disabled=!t.checked;return;}if(t.id==='import-delete-ack'){const button=document.getElementById('import-delete-confirm');if(button)button.disabled=!t.checked;return;}if(t.hasAttribute('data-batch-select')){state.batchIncluded[Number(t.dataset.batchSelect)]=t.checked;return;}if(t.hasAttribute('data-review-check')){const sid=t.dataset.reviewCheck;state.reviewSelection=t.checked?[...new Set([...state.reviewSelection,sid])]:state.reviewSelection.filter(x=>x!==sid);const counter=$('#review-selected-count');if(counter)counter.textContent=state.reviewSelection.length;return;}if(t.id==='bulk-scope'){state.bulkScope=t.value;render();return;}if(t.id==='import-issue-only'){state.importIssueOnly=t.checked;render();return;}if(t.id==='bulk-class'){state.bulkClass=t.value;return;}if(t.id==='bulk-basis'){state.bulkBasis=t.value;render();return;}if(t.id==='bulk-minutes'){state.bulkMinutes=t.value;return;}if(t.id==='bulk-remember'){state.bulkRemember=t.checked;return;}if(['parent-report-student','parent-report-period','parent-report-month','parent-report-from','parent-report-to','parent-report-course'].includes(t.id)){const k={'parent-report-student':'reportStudent','parent-report-period':'reportPeriod','parent-report-month':'reportMonth','parent-report-from':'reportFrom','parent-report-to':'reportTo','parent-report-course':'reportCourse'}[t.id];state[k]=t.value;if(t.id==='parent-report-student')state.reportCourse='';render();return;}if(t.id==='reconcile-month'){state.reconcileMonth=t.value;render();return;}if(t.id==='reconcile-student'){state.reconcileStudent=t.value;render();return;}if(t.id==='finance-month'){state.financeMonth=t.value;render();return;}if(t.id==='timeline-student'){state.timelineStudent=t.value;render();return;}if(t.id==='history-filter'){state.filter=t.value;render();return;}if(['history-from','history-to','history-student','history-group','history-course','history-tutor','history-status'].includes(t.id)){const key={'history-from':'historyFrom','history-to':'historyTo','history-student':'historyStudent','history-group':'historyGroup','history-course':'historyCourse','history-tutor':'historyTutor','history-status':'historyStatus'}[t.id];state[key]=t.value;render();return;}if(t.hasAttribute('data-import-date-file')){return;} // Apply only after clicking “บันทึกวันที่” for this file.
+async function onChange(e){const t=e.target;try{if(t.name==='member'&&t.closest('#group-form')){updateGroupMemberCount();return;}if(t.id==='leave-with-makeup'){const area=$('#leave-makeup-fields');if(area)area.hidden=!t.checked;return;}if(t.id==='manual-picker'){chooseManualStudent(t.value);return;}if(t.hasAttribute('data-manual-member')){const c=[...document.querySelectorAll('.manual-check')].find(x=>x.value===t.dataset.manualMember);if(c)c.checked=t.checked;return;}if(t.hasAttribute('data-manual-course')){const c=document.querySelector(`.manual-course[data-student="${CSS.escape(t.dataset.manualCourse)}"]`);if(c)c.value=t.value;return;}if(t.id==='system-verify-file'){await previewBackupFile(t.files?.[0]);t.value='';return;}if(t.id==='system-restore-demo'){await restoreDemoBackup(t.files?.[0]);return;}if(t.id==='excel-file'){const files=[...t.files];if(!files.length)return;await prepareImportBatch(files);return;}if(t.id==='leave-student'){const c=$('#leave-course');if(c)c.innerHTML=activeStudentCourseOptions(t.value);return;}if(t.id==='makeup-student'){const c=$('#makeup-course'),sched=$('#makeup-original-schedule');if(c)c.innerHTML=courseOptions(t.value);if(sched)sched.innerHTML=sourceScheduleOptions(t.value);return;}if(t.id==='course-billing-mode'){updateCourseBillingFields();return;}if(t.id==='course-student'){const s=byId('Students',t.value),rate=$('#course-hourly-rate');if(rate&&s?.hourly_rate_baht)rate.value=s.hourly_rate_baht;return;}if(t.id==='group_id'){const g=byId('Groups',t.value),ids=(g?.member_ids||'').split('|');document.querySelectorAll('.manual-check').forEach(check=>check.checked=ids.includes(check.value));const basis=$('#deduction_mode');if(basis&&ruleFor('group',t.value))basis.value=ruleFor('group',t.value).basis==='tutor'?'full':'full';return;}if(t.id==='summary-ack'){const button=$('#summary-confirm-btn');if(button)button.disabled=!t.checked;return;}if(t.id==='import-delete-ack'){const button=document.getElementById('import-delete-confirm');if(button)button.disabled=!t.checked;return;}if(t.hasAttribute('data-import-replace')){state.importReplaceChoices[Number(t.dataset.importReplace)]=t.value;render();return;}if(t.hasAttribute('data-batch-select')){state.batchIncluded[Number(t.dataset.batchSelect)]=t.checked;return;}if(t.hasAttribute('data-review-check')){const sid=t.dataset.reviewCheck;state.reviewSelection=t.checked?[...new Set([...state.reviewSelection,sid])]:state.reviewSelection.filter(x=>x!==sid);const counter=$('#review-selected-count');if(counter)counter.textContent=state.reviewSelection.length;return;}if(t.id==='bulk-scope'){state.bulkScope=t.value;render();return;}if(t.id==='import-issue-only'){state.importIssueOnly=t.checked;render();return;}if(t.id==='bulk-class'){state.bulkClass=t.value;return;}if(t.id==='bulk-basis'){state.bulkBasis=t.value;render();return;}if(t.id==='bulk-minutes'){state.bulkMinutes=t.value;return;}if(t.id==='bulk-remember'){state.bulkRemember=t.checked;return;}if(['parent-report-student','parent-report-period','parent-report-month','parent-report-from','parent-report-to','parent-report-course'].includes(t.id)){const k={'parent-report-student':'reportStudent','parent-report-period':'reportPeriod','parent-report-month':'reportMonth','parent-report-from':'reportFrom','parent-report-to':'reportTo','parent-report-course':'reportCourse'}[t.id];state[k]=t.value;if(t.id==='parent-report-student')state.reportCourse='';render();return;}if(t.id==='reconcile-month'){state.reconcileMonth=t.value;render();return;}if(t.id==='reconcile-student'){state.reconcileStudent=t.value;render();return;}if(t.id==='finance-month'){state.financeMonth=t.value;render();return;}if(t.id==='timeline-student'){state.timelineStudent=t.value;render();return;}if(t.id==='history-filter'){state.filter=t.value;render();return;}if(['history-from','history-to','history-student','history-group','history-course','history-tutor','history-status'].includes(t.id)){const key={'history-from':'historyFrom','history-to':'historyTo','history-student':'historyStudent','history-group':'historyGroup','history-course':'historyCourse','history-tutor':'historyTutor','history-status':'historyStatus'}[t.id];state[key]=t.value;render();return;}if(t.hasAttribute('data-import-date-file')){return;} // Apply only after clicking “บันทึกวันที่” for this file.
 if(t.id==='student-grade-filter'){state.studentGradeFilter=t.value;render();return;}if(t.id==='student-status-filter'){state.studentStatusFilter=t.value;render();return;}const d=state.importDraft;if(!d)return;if(t.id==='import-type'){d.classType=t.value;d.groupId=t.value==='group'?d.groupId:'';d.people.forEach(p=>{p.manualMinutes=null;});render();return;}if(t.id==='import-split'){d.split=t.checked;d.people.forEach(p=>{p.classChoice=p.classChoice||'private';p.manualMinutes=null;});render();return;}if(t.id==='import-group'){d.groupId=t.value;d.basis=ruleFor('group',t.value)?.basis||d.basis;d.people.forEach(p=>{p.manualMinutes=null;if(p.studentId)p.courseId=proposedCourse(p.studentId,'group',t.value)?.id||'';});render();return;}if(t.id==='import-tutor'){d.tutorIndex=Number(t.value);d.people[d.tutorIndex].include=false;d.people.forEach(p=>p.manualMinutes=null);render();return;}if(t.id==='import-basis'){d.basis=t.value;d.people.forEach(p=>p.manualMinutes=null);render();return;}if(t.id==='import-source'){d.sourceIndex=Number(t.value);d.people.forEach(p=>p.manualMinutes=null);render();return;}let i;if(t.hasAttribute('data-import-include')){i=Number(t.dataset.importInclude);d.people[i].include=t.checked;render();return;}if(t.hasAttribute('data-import-student')){i=Number(t.dataset.importStudent);const p=d.people[i];p.studentId=t.value;p.courseId=proposedCourse(p.studentId,d.classType,d.groupId)?.id||'';p.remember=!!p.studentId;p.matchLevel=p.studentId?'match':'unknown';p.matchReason=p.studentId?'เลือกนักเรียนด้วยตนเอง':'';const propagated=p.studentId?propagateMeetMapping(d,p):0;render();if(propagated)toast('จดจำและจับคู่ชื่อ Meet นี้เพิ่ม '+propagated+' รายการในชุดไฟล์');return;}if(t.hasAttribute('data-import-remember')){i=Number(t.dataset.importRemember);d.people[i].remember=t.checked;return;}if(t.hasAttribute('data-import-class')){i=Number(t.dataset.importClass);const p=d.people[i];p.classChoice=t.value;p.courseId=proposedCourse(p.studentId,t.value==='private'?'private':'group',t.value)?.id||'';p.manualMinutes=null;render();return;}if(t.hasAttribute('data-import-course')){i=Number(t.dataset.importCourse);d.people[i].courseId=t.value;return;}if(t.hasAttribute('data-import-minutes')){i=Number(t.dataset.importMinutes);d.people[i].manualMinutes=t.value===''?NaN:Number(t.value);return;}}catch(err){notice(err);}}
 function onInput(e){if(e.target.id==='import-archive-search'){filterImportArchive(e.target.value);return;}if(e.target.id==='group-member-search'){filterGroupMembers(e.target.value);return;}if(['edit-join','edit-leave'].includes(e.target.id)){updateEditAttendancePreview();return;}if(e.target.id==='manual-search'){const query=e.target.value.trim().toLocaleLowerCase();const picker=$('#manual-picker');if(picker){picker.querySelectorAll('option').forEach(o=>{if(!o.value)return;o.hidden=!!query&&!o.textContent.toLocaleLowerCase().includes(query);});}return;}if(e.target.id==='global-search-input')updateGlobalSearchResults(e.target.value);if(['class_start','class_end'].includes(e.target.id)||e.target.closest('[data-manual-session-row]')&&e.target.matches('input[type=time],input[type=date]'))manualRefreshRows();if(e.target.id==='student-search'){state.search=e.target.value;const pos=e.target.selectionStart;render();const next=$('#student-search');next?.focus();try{next.setSelectionRange(pos,pos);}catch{}}if(e.target.id==='bulk-minutes'){state.bulkMinutes=e.target.value;}if(e.target.hasAttribute('data-import-minutes')){const d=state.importDraft;if(d)d.people[Number(e.target.dataset.importMinutes)].manualMinutes=e.target.value===''?NaN:Number(e.target.value);}}
 /* Startup moved to the bottom so all const bindings and Portal Manager are initialized. */
@@ -1811,10 +1946,13 @@ function reportClockRaw(d){const clone={...d,timeOverrideStart:'',timeOverrideEn
 // an existing attendance/payment workflow; browser checks are not server locks.
 function importIntelligentWarnings(d){
   if(!d)return '';
+  const ix=state.importDrafts.indexOf(d),choice=state.importReplaceChoices[ix]||'';
+  const old=choice.startsWith('replace:')?byId('Imports',choice.slice(8)):null;
+  const ignored=new Set(String(old?.session_id||'').split('|').filter(Boolean));
   const seen=new Map(),issues=[];
   d.people.forEach((p,i)=>{if(i===d.tutorIndex||!p.include)return;
     if(p.studentId){if(seen.has(p.studentId))issues.push('ชื่อ Meet หลายรายการผูกกับ '+studentName(p.studentId)+' — ตรวจสอบก่อนบันทึก');seen.set(p.studentId,true);}
-    const conflict=p.studentId&&duplicateAttendance(d.date,p.studentId,p.join,p.leave);
+    const conflict=p.studentId&&duplicateAttendance(d.date,p.studentId,p.join,p.leave,ignored);
     if(conflict)issues.push(studentName(p.studentId)+' มีคาบเวลาใกล้เคียงหรือทับซ้อนอยู่แล้วใน '+d.date);
     if(!p.studentId)issues.push('ยังไม่ได้จับคู่ '+p.name);
     if((p.segments||[]).length>1)issues.push(p.name+' เข้า–ออก Meet '+p.segments.length+' ช่วง (เวลาถูกนับแบบไม่ซ้ำช่วง)');
